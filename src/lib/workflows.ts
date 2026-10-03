@@ -191,6 +191,11 @@ export async function submitCompletion(
       },
     ]);
     await supabase.from("plans").update({ status: "reported" }).eq("id", planId);
+    await notify(supabase, userId, account.id, {
+      title: "予約投稿のタスクを追加しました",
+      body: `「${plan.title}」の完成報告を確認しました。確認事項をチェックして予約投稿してください。`,
+      link: `/plans/${planId}/report`,
+    });
   }
   return review;
 }

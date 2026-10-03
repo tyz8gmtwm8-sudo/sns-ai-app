@@ -7,6 +7,7 @@ import { CURRENT_ACCOUNT_COOKIE, getOrCreateAccount, requireUser } from "@/lib/a
 import { runHearing } from "@/lib/agents/hearing";
 import { toErrorState, type ActionState } from "@/lib/action-state";
 import { GENRES } from "@/lib/constants";
+import { getAppUrl, notificationEmailHtml, sendEmail } from "@/lib/email";
 import type { Policy } from "@/lib/types";
 
 // ---------- アカウントの切り替え・追加 ----------
@@ -149,4 +150,42 @@ export async function savePolicy(_prev: ActionState, formData: FormData): Promis
   revalidatePath("/", "layout");
   if (next === "stay") return { message: "保存しました" };
   redirect(next);
+}
+
+// ---------- 通知設定（S-10） ----------
+export async function saveNotifySettings(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    const { supabase, userId } = await requireUser();
+    const { error } = await supabase
+      .from("profiles")
+      .update({ notify_email: formData.get("notify_email") === "on" })
+      .eq("id", userId);
+    if (error) throw new Error(error.message);
+  } catch (e) {
+    return toErrorState(e);
+  }
+  revalidatePath("/settings");
+  return { message: "保存しました" };
+}
+
+export async function sendTestEmail(): Promise<ActionState> {
+  try {
+    const { supabase, userId } = await requireUser();
+    const { data: profile } = await supabase.from("profiles").select("email").eq("id", userId).maybeSingle();
+    if (!profile?.email) return { error: "メールアドレスが登録されていません" };
+
+    const result = await sendEmail({
+      to: profile.email,
+      subject: "【テスト】Instagram運用AIからの通知メール",
+      html: notificationEmailHtml({
+        title: "テストメールです",
+        body: "このメールが届いていれば、通知メールの設定は完了です。",
+        url: `${await getAppUrl()}/settings`,
+      }),
+    });
+    if (!result.ok) return { error: result.error };
+    return { message: `${profile.email} に送信しました。届いているか確認してください（迷惑メールフォルダも）。` };
+  } catch (e) {
+    return toErrorState(e);
+  }
 }
