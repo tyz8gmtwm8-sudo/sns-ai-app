@@ -4,10 +4,11 @@ import { markAllRead } from "@/app/actions/posts";
 
 // 通知一覧
 export default async function NotificationsPage() {
-  const { supabase } = await requireOnboardedAccount();
+  const { supabase, account } = await requireOnboardedAccount();
   const { data: notifications } = await supabase
     .from("notifications")
     .select("*")
+    .eq("account_id", account.id)
     .order("created_at", { ascending: false })
     .limit(50);
 

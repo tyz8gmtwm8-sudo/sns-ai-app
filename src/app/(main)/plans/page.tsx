@@ -21,8 +21,8 @@ const ADOPT_STEPS = [
 
 // S-05 企画選択
 export default async function PlansPage() {
-  const { supabase } = await requireOnboardedAccount();
-  const { data } = await supabase.from("plans").select("*").order("created_at", { ascending: false }).limit(30);
+  const { supabase, account } = await requireOnboardedAccount();
+  const { data } = await supabase.from("plans").select("*").eq("account_id", account.id).order("created_at", { ascending: false }).limit(30);
   const plans = (data ?? []) as (Plan & { recommendation: string | null; research_memo_id: string | null })[];
   const proposed = plans.filter((p) => p.status === "proposed");
   const others = plans.filter((p) => p.status !== "proposed");

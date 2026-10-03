@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireOnboardedAccount } from "@/lib/account";
+import { AccountSwitcher } from "@/components/AccountSwitcher";
 
 // AI生成は時間がかかるので、このグループの画面から呼ぶ処理の最大時間を延ばす（秒）
 export const maxDuration = 120;
@@ -14,19 +15,20 @@ const NAV = [
 
 // ログイン後の共通レイアウト（ヘッダー：各画面・設定・通知へのリンク）
 export default async function MainLayout({ children }: LayoutProps<"/">) {
-  const { supabase, userId } = await requireOnboardedAccount();
+  const { supabase, account, accounts } = await requireOnboardedAccount();
   const { count } = await supabase
     .from("notifications")
     .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
+    .eq("account_id", account.id)
     .is("read_at", null);
 
   return (
     <>
       <header className="sticky top-0 z-10 border-b border-stone-200 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center gap-4 overflow-x-auto px-4 py-3 text-sm">
+        <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-3 text-sm">
           <Link href="/dashboard" className="shrink-0 font-bold">📸 運用AI</Link>
-          <nav className="flex shrink-0 gap-3 text-stone-600">
+          <AccountSwitcher current={account} accounts={accounts} />
+          <nav className="flex min-w-0 gap-3 overflow-x-auto whitespace-nowrap text-stone-600">
             {NAV.map((n) => (
               <Link key={n.href} href={n.href} className="hover:text-stone-900">{n.label}</Link>
             ))}

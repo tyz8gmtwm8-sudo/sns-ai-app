@@ -20,14 +20,15 @@ const fmt = (d: string) => new Date(d).toLocaleString("ja-JP", { timeZone: "Asia
 
 // S-08 投稿の紐付け（＋数値の手入力）
 export default async function PostsPage() {
-  const { supabase } = await requireOnboardedAccount();
+  const { supabase, account } = await requireOnboardedAccount();
   const [{ data: postsData }, { data: plans }] = await Promise.all([
     supabase
       .from("posts")
       .select("id, media_type, permalink, caption, posted_at, plan_id, link_status, insights(likes, comments, reach, saves, shares, plays, captured_at, source)")
+      .eq("account_id", account.id)
       .order("posted_at", { ascending: false })
       .limit(30),
-    supabase.from("plans").select("id, title, status").in("status", ["materials_ready", "reported", "posted", "done"]).order("created_at", { ascending: false }),
+    supabase.from("plans").select("id, title, status").eq("account_id", account.id).in("status", ["materials_ready", "reported", "posted", "done"]).order("created_at", { ascending: false }),
   ]);
   const posts = (postsData ?? []) as PostRow[];
   const planTitle = (id: string | null) => plans?.find((p) => p.id === id)?.title;

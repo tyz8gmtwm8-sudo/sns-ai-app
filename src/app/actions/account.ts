@@ -1,17 +1,49 @@
 "use server";
 // アカウント設定（ジャンル・ヒアリング・方針）に関するServer Action
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { getOrCreateAccount } from "@/lib/account";
+import { CURRENT_ACCOUNT_COOKIE, getOrCreateAccount, requireUser } from "@/lib/account";
 import { runHearing } from "@/lib/agents/hearing";
 import { toErrorState, type ActionState } from "@/lib/action-state";
 import { GENRES } from "@/lib/constants";
 import type { Policy } from "@/lib/types";
 
+// ---------- アカウントの切り替え・追加 ----------
+async function rememberAccount(accountId: string) {
+  (await cookies()).set(CURRENT_ACCOUNT_COOKIE, accountId, {
+    httpOnly: true, // ブラウザのJavaScriptからは読めないようにする
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365, // 1年間覚えておく
+  });
+}
+
+export async function switchAccount(formData: FormData) {
+  const accountId = String(formData.get("account_id"));
+  const { supabase } = await requireUser();
+  // 自分のアカウントか確認する（RLSにより他人のアカウントは見つからない）
+  const { data } = await supabase.from("accounts").select("id").eq("id", accountId).maybeSingle();
+  if (data) await rememberAccount(data.id);
+  revalidatePath("/", "layout");
+  redirect("/dashboard");
+}
+
+export async function addAccount() {
+  const { supabase, userId } = await requireUser();
+  const { data, error } = await supabase.from("accounts").insert({ user_id: userId }).select("id").single();
+  if (error) throw new Error(`アカウント追加に失敗しました: ${error.message}`);
+  await rememberAccount(data.id);
+  revalidatePath("/", "layout");
+  // 新しいアカウントの初回設定（ジャンル選択→ヒアリング）へ
+  redirect("/onboarding/genres");
+}
+
 // ---------- S-02 ジャンル選択 ----------
 export async function saveGenres(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const genres = formData.getAll("genres").map(String).filter((g) => (GENRES as readonly string[]).includes(g));
   const genreOther = String(formData.get("genre_other") ?? "").trim();
+  const name = String(formData.get("name") ?? "").trim();
   const next = String(formData.get("next") ?? "/onboarding/hearing");
 
   if (genres.length === 0) return { error: "ジャンルを1つ以上選んでください" };
@@ -21,7 +53,7 @@ export async function saveGenres(_prev: ActionState, formData: FormData): Promis
     const { supabase, account } = await getOrCreateAccount();
     const { error } = await supabase
       .from("accounts")
-      .update({ genres, genre_other: genres.includes("その他") ? genreOther : null, updated_at: new Date().toISOString() })
+      .update({ name: name || null, genres, genre_other: genres.includes("その他") ? genreOther : null, updated_at: new Date().toISOString() })
       .eq("id", account.id);
     if (error) throw new Error(error.message);
   } catch (e) {

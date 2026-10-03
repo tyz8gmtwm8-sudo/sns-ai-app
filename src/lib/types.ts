@@ -14,6 +14,7 @@ export type Policy = {
 export type Account = {
   id: string;
   user_id: string;
+  name: string | null; // 切り替えメニューに表示する呼び名
   genres: string[];
   genre_other: string | null;
   policy: Policy | null;

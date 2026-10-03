@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { requireOnboardedAccount } from "@/lib/account";
 import { PLAN_STATUS_LABELS, POST_TYPE_LABELS } from "@/lib/constants";
 import type { Bgm, Cut, Hashtags, Materials, Plan } from "@/lib/types";
@@ -11,9 +11,10 @@ const hashtagText = (h: Hashtags | null) =>
 // S-06 素材確認・編集
 export default async function MaterialsPage({ params }: PageProps<"/plans/[id]/materials">) {
   const { id } = await params;
-  const { supabase } = await requireOnboardedAccount();
-  const { data: plan } = await supabase.from("plans").select("*").eq("id", id).maybeSingle();
-  if (!plan) notFound();
+  const { supabase, account } = await requireOnboardedAccount();
+  const { data: plan } = await supabase.from("plans").select("*").eq("id", id).eq("account_id", account.id).maybeSingle();
+  // 見つからない（または別のアカウントの企画）ときは企画一覧へ
+  if (!plan) redirect("/plans");
   const { data } = await supabase.from("materials").select("*").eq("plan_id", id).maybeSingle();
   const m = data as Materials | null;
   const p = plan as Plan;

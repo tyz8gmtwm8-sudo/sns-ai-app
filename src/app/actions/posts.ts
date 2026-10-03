@@ -100,7 +100,7 @@ export async function makeReport(_prev: ActionState, formData: FormData): Promis
 
 // ---------- 通知をすべて既読にする ----------
 export async function markAllRead() {
-  const { supabase, userId } = await requireUser();
-  await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("user_id", userId).is("read_at", null);
+  const { supabase, account } = await requireOnboardedAccount();
+  await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("account_id", account.id).is("read_at", null);
   revalidatePath("/", "layout");
 }

@@ -27,9 +27,9 @@ export default async function SettingsPage() {
       </section>
 
       <section className="card">
-        <h2 className="h2">ジャンル</h2>
+        <h2 className="h2">アカウント名・ジャンル</h2>
         <div className="mt-4">
-          <GenreForm selected={account.genres} other={account.genre_other} next="/settings" />
+          <GenreForm name={account.name} selected={account.genres} other={account.genre_other} next="/settings" />
         </div>
       </section>
     </div>

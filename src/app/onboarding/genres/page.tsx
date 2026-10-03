@@ -10,7 +10,7 @@ export default async function GenresPage() {
       <h1 className="h1 mt-1">アカウントのジャンルを選んでください</h1>
       <p className="mt-2 text-sm text-stone-600">複数選べます。AIの提案内容がジャンルに合わせて変わります。</p>
       <div className="card mt-6">
-        <GenreForm selected={account.genres} other={account.genre_other} next="/onboarding/hearing" />
+        <GenreForm name={account.name} selected={account.genres} other={account.genre_other} next="/onboarding/hearing" />
       </div>
     </main>
   );

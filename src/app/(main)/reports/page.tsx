@@ -8,10 +8,11 @@ const fmt = (d: string) => new Date(d).toLocaleString("ja-JP", { timeZone: "Asia
 // S-09 分析レポート
 export default async function ReportsPage({ searchParams }: PageProps<"/reports">) {
   const { id } = await searchParams;
-  const { supabase } = await requireOnboardedAccount();
+  const { supabase, account } = await requireOnboardedAccount();
   const { data: reports } = await supabase
     .from("reports")
     .select("id, kind, created_at, analysis, summary")
+    .eq("account_id", account.id)
     .order("created_at", { ascending: false })
     .limit(30);
 

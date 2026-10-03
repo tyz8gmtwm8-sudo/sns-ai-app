@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireOnboardedAccount } from "@/lib/account";
+import { accountLabel, requireOnboardedAccount } from "@/lib/account";
 import { toggleTask } from "@/app/actions/plans";
 import { PLAN_STATUS_LABELS, POST_TYPE_LABELS, REPORT_KIND_LABELS } from "@/lib/constants";
 import type { ChiefSummary, Plan, Task } from "@/lib/types";
@@ -10,15 +10,16 @@ export default async function DashboardPage() {
 
   const [{ data: tasks }, { data: activePlans }, { data: proposed }, { data: latestReport }, { data: notifications }] =
     await Promise.all([
-      supabase.from("tasks").select("*").eq("status", "todo").order("created_at").order("sort"),
+      supabase.from("tasks").select("*").eq("account_id", account.id).eq("status", "todo").order("created_at").order("sort"),
       supabase
         .from("plans")
         .select("*")
+        .eq("account_id", account.id)
         .in("status", ["adopted", "materials_ready", "reported", "posted"])
         .order("adopted_at", { ascending: false }),
-      supabase.from("plans").select("id").eq("status", "proposed").limit(1),
-      supabase.from("reports").select("*").neq("kind", "competitor").order("created_at", { ascending: false }).limit(1).maybeSingle(),
-      supabase.from("notifications").select("*").is("read_at", null).order("created_at", { ascending: false }).limit(5),
+      supabase.from("plans").select("id").eq("account_id", account.id).eq("status", "proposed").limit(1),
+      supabase.from("reports").select("*").eq("account_id", account.id).neq("kind", "competitor").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      supabase.from("notifications").select("*").eq("account_id", account.id).is("read_at", null).order("created_at", { ascending: false }).limit(5),
     ]);
 
   const summary = latestReport?.summary as ChiefSummary | undefined;
@@ -27,7 +28,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-xs text-stone-500">{account.genres.join("・")}</p>
+        <p className="text-xs text-stone-500">{accountLabel(account)}</p>
         <h1 className="h1">ダッシュボード</h1>
       </div>
 

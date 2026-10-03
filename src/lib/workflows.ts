@@ -79,7 +79,7 @@ const TASK_LINKS: Record<TaskKind, (planId: string) => string> = {
 
 export async function adoptPlan(ctx: Ctx, planId: string) {
   const { supabase, userId, account } = ctx;
-  const plan = await getPlan(supabase, planId);
+  const plan = await getPlan(supabase, account.id, planId);
 
   // 採用した企画以外の同じ回の提案は不採用にする
   await supabase.from("plans").update({ status: "rejected" }).eq("batch_id", plan.batch_id).neq("id", planId);
@@ -99,6 +99,7 @@ export async function adoptPlan(ctx: Ctx, planId: string) {
   await supabase.from("tasks").insert(
     tasks.map((t, i) => ({
       user_id: userId,
+      account_id: account.id,
       plan_id: planId,
       title: t.title,
       detail: t.detail,
@@ -108,7 +109,7 @@ export async function adoptPlan(ctx: Ctx, planId: string) {
   );
 
   await supabase.from("plans").update({ status: "materials_ready" }).eq("id", planId);
-  await notify(supabase, userId, {
+  await notify(supabase, userId, account.id, {
     title: "素材ができました",
     body: `「${plan.title}」の素材と撮影タスクを用意しました。`,
     link: `/plans/${planId}/materials`,
@@ -120,7 +121,7 @@ export type RegenTarget = "caption" | "hashtags" | "bgm" | "telops" | "structure
 
 export async function regenerateMaterial(ctx: Ctx, planId: string, target: RegenTarget, instruction: string) {
   const { supabase, account } = ctx;
-  const plan = await getPlan(supabase, planId);
+  const plan = await getPlan(supabase, account.id, planId);
   const { data: current } = await supabase.from("materials").select("*").eq("plan_id", planId).single();
   const focus = `${instruction}\n（今回は「${target}」だけを作り直します。他の項目は今の内容のままで構いません）`;
 
@@ -143,7 +144,7 @@ export async function submitCompletion(
   thumbnail?: { path: string; image: ImageInput },
 ) {
   const { supabase, userId, account } = ctx;
-  const plan = await getPlan(supabase, planId);
+  const plan = await getPlan(supabase, account.id, planId);
   const { data: materials } = await supabase.from("materials").select("*").eq("plan_id", planId).maybeSingle();
 
   const review = await chiefReview({
@@ -172,6 +173,7 @@ export async function submitCompletion(
     await supabase.from("tasks").insert([
       {
         user_id: userId,
+        account_id: account.id,
         plan_id: planId,
         title: "Instagramで予約投稿する",
         detail: "確認事項をチェックしてから、InstagramまたはMeta Business Suiteで予約投稿してください。",
@@ -180,6 +182,7 @@ export async function submitCompletion(
       },
       {
         user_id: userId,
+        account_id: account.id,
         plan_id: planId,
         title: "公開された投稿を企画と紐付ける",
         detail: "投稿が公開されたら、投稿の紐付け画面で企画と結びつけてください。",
@@ -238,7 +241,7 @@ export async function createReport(ctx: Ctx, kind: ReportKind, postId?: string) 
     if (post?.plan_id) await supabase.from("plans").update({ status: "done" }).eq("id", post.plan_id);
   }
 
-  await notify(supabase, userId, {
+  await notify(supabase, userId, account.id, {
     title: `${kindLabel}ができました`,
     body: analysis.headline,
     link: `/reports?id=${report.id}`,
@@ -247,8 +250,10 @@ export async function createReport(ctx: Ctx, kind: ReportKind, postId?: string) 
 }
 
 // ---------- 共通 ----------
-async function getPlan(supabase: SupabaseClient, planId: string) {
-  const { data, error } = await supabase.from("plans").select("*").eq("id", planId).single();
-  if (error || !data) throw new Error("企画が見つかりません");
+// 今選んでいるアカウントの企画だけを取得する
+// （別のタブでアカウントを切り替えた後に、違うアカウントの方針で処理しないため）
+async function getPlan(supabase: SupabaseClient, accountId: string, planId: string) {
+  const { data, error } = await supabase.from("plans").select("*").eq("id", planId).eq("account_id", accountId).maybeSingle();
+  if (error || !data) throw new Error("この企画は、今選んでいるアカウントのものではありません。画面上部でアカウントを確認してください。");
   return data as Plan;
 }
