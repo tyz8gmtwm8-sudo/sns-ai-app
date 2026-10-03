@@ -13,11 +13,15 @@ export function HearingChat({ initialMessages, existingPolicy }: { initialMessag
   const formRef = useRef<HTMLFormElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // 新しいメッセージが来たら一番下までスクロールし、入力欄を空にする
+  // 新しいメッセージが来たら一番下までスクロールする
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    if (!pending) formRef.current?.reset();
   }, [initialMessages.length, pending]);
+
+  // 送信が成功したときだけ入力欄を空にする（エラー時は書いた文章を残す）
+  useEffect(() => {
+    if (!pending && state && !state.error) formRef.current?.reset();
+  }, [pending, state]);
 
   return (
     <div className="mt-6 flex flex-1 flex-col gap-4">

@@ -40,7 +40,6 @@ export async function sendHearingMessage(_prev: HearingState, formData: FormData
 
   try {
     const { supabase, userId, account } = await getOrCreateAccount();
-    await supabase.from("hearing_messages").insert({ user_id: userId, account_id: account.id, role: "user", content: text });
 
     const { data: history } = await supabase
       .from("hearing_messages")
@@ -48,12 +47,19 @@ export async function sendHearingMessage(_prev: HearingState, formData: FormData
       .eq("account_id", account.id)
       .order("created_at");
 
+    // 今回の発言はまだ保存せず、AIに渡す会話の最後に付け足す
     const genres = account.genres.map((g) => (g === "その他" ? account.genre_other ?? g : g));
-    const result = await runHearing(genres, history ?? []);
+    const result = await runHearing(genres, [...(history ?? []), { role: "user", content: text }]);
 
-    await supabase
-      .from("hearing_messages")
-      .insert({ user_id: userId, account_id: account.id, role: "assistant", content: result.reply });
+    // AIの返事が成功したときだけ、発言と返事をまとめて保存する
+    // （失敗したときに発言だけが残り、送り直すと二重になるのを防ぐため）
+    // 並び順が入れ替わらないよう、返事の時刻を発言の1ミリ秒後にする
+    const now = Date.now();
+    const { error } = await supabase.from("hearing_messages").insert([
+      { user_id: userId, account_id: account.id, role: "user", content: text, created_at: new Date(now).toISOString() },
+      { user_id: userId, account_id: account.id, role: "assistant", content: result.reply, created_at: new Date(now + 1).toISOString() },
+    ]);
+    if (error) throw new Error(`会話の保存に失敗しました: ${error.message}`);
 
     revalidatePath("/onboarding/hearing");
     return { done: result.done, policy: result.done ? result.policy : undefined };
