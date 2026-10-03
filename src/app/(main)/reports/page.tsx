@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { requireOnboardedAccount } from "@/lib/account";
 import { REPORT_KIND_LABELS } from "@/lib/constants";
+import { runCompetitorAnalysis } from "@/app/actions/instagram";
+import { ActionForm } from "@/components/ActionForm";
+import { getConnection } from "@/lib/instagram/sync";
 import type { Analysis, ChiefSummary } from "@/lib/types";
 
 const fmt = (d: string) => new Date(d).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", dateStyle: "short", timeStyle: "short" });
@@ -19,10 +22,23 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
   const selected = reports?.find((r) => r.id === id) ?? reports?.[0];
   const analysis = selected?.analysis as Analysis | undefined;
   const summary = selected?.summary as ChiefSummary | undefined;
+  const conn = await getConnection(supabase, account.id);
 
   return (
     <div className="space-y-6">
-      <h1 className="h1">分析レポート</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h1 className="h1">分析レポート</h1>
+        {conn ? (
+          <ActionForm
+            action={runCompetitorAnalysis}
+            progressSteps={["競合アカウントの投稿を取得しています…", "分析AIが投稿種類ごとの傾向を読み解いています…", "編集長AIがまとめています…"]}
+          >
+            <button className="btn-outline">競合分析を今すぐする</button>
+          </ActionForm>
+        ) : (
+          <p className="text-xs text-stone-500">競合分析はInstagram連携後に使えます（毎週月曜に自動実行）</p>
+        )}
+      </div>
       {!reports?.length ? (
         <p className="card text-sm text-stone-600">
           まだレポートはありません。<Link href="/posts" className="underline">投稿</Link>画面で数値を入力して、レポートを作りましょう。

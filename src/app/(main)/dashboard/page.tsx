@@ -3,6 +3,7 @@ import { accountLabel, requireOnboardedAccount } from "@/lib/account";
 import { toggleTask } from "@/app/actions/plans";
 import { PLAN_STATUS_LABELS, POST_TYPE_LABELS, REPORT_KIND_LABELS } from "@/lib/constants";
 import type { ChiefSummary, Plan, Task } from "@/lib/types";
+import { getConnection } from "@/lib/instagram/sync";
 
 // S-04 ダッシュボード（画面3）
 export default async function DashboardPage() {
@@ -23,6 +24,16 @@ export default async function DashboardPage() {
     ]);
 
   const summary = latestReport?.summary as ChiefSummary | undefined;
+
+  // 連携切れや、定期実行の失敗があれば知らせる
+  const conn = await getConnection(supabase, account.id);
+  const { data: lastJob } = await supabase
+    .from("job_runs")
+    .select("status, detail, created_at")
+    .eq("account_id", account.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
   const hasWork = (tasks?.length ?? 0) > 0 || (activePlans?.length ?? 0) > 0;
 
   return (
@@ -31,6 +42,19 @@ export default async function DashboardPage() {
         <p className="text-xs text-stone-500">{accountLabel(account)}</p>
         <h1 className="h1">ダッシュボード</h1>
       </div>
+
+      {conn?.status === "error" && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          ⚠️ Instagram連携が切れています。<Link href="/settings" className="underline">設定</Link>から再連携してください。それまでは
+          <Link href="/posts#screenshot" className="mx-1 underline">スクショ読み取り</Link>で数値を取り込めます。
+        </div>
+      )}
+      {lastJob?.status === "failed" && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          ⚠️ {new Date(lastJob.created_at).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })}の自動処理に失敗しました（翌日に自動で再実行します）。
+          <span className="block text-xs">{lastJob.detail}</span>
+        </div>
+      )}
 
       {/* 編集長AIからの指示 */}
       <section className="card">

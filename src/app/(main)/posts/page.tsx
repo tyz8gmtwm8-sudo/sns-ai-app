@@ -2,6 +2,8 @@ import { requireOnboardedAccount } from "@/lib/account";
 import { addPost, confirmLink, makeReport, readScreenshot, saveInsights } from "@/app/actions/posts";
 import { ActionForm } from "@/components/ActionForm";
 import { POST_TYPE_LABELS } from "@/lib/constants";
+import { syncNow } from "@/app/actions/instagram";
+import { getConnection } from "@/lib/instagram/sync";
 
 type Insight = { likes: number | null; comments: number | null; reach: number | null; saves: number | null; shares: number | null; plays: number | null; captured_at: string; source: string };
 type PostRow = {
@@ -12,6 +14,7 @@ type PostRow = {
   posted_at: string | null;
   plan_id: string | null;
   link_status: string;
+  thumbnail_url: string | null;
   insights: Insight[];
 };
 
@@ -24,13 +27,14 @@ export default async function PostsPage() {
   const [{ data: postsData }, { data: plans }] = await Promise.all([
     supabase
       .from("posts")
-      .select("id, media_type, permalink, caption, posted_at, plan_id, link_status, insights(likes, comments, reach, saves, shares, plays, captured_at, source)")
+      .select("id, media_type, permalink, caption, posted_at, plan_id, link_status, thumbnail_url, insights(likes, comments, reach, saves, shares, plays, captured_at, source)")
       .eq("account_id", account.id)
       .order("posted_at", { ascending: false })
       .limit(30),
     supabase.from("plans").select("id, title, status").eq("account_id", account.id).in("status", ["materials_ready", "reported", "posted", "done"]).order("created_at", { ascending: false }),
   ]);
   const posts = (postsData ?? []) as PostRow[];
+  const conn = await getConnection(supabase, account.id);
   const planTitle = (id: string | null) => plans?.find((p) => p.id === id)?.title;
 
   const planSelect = (defaultValue?: string | null) => (
@@ -44,11 +48,27 @@ export default async function PostsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h1 className="h1">投稿の紐付け</h1>
-        <ActionForm action={makeReport} progressSteps={REPORT_STEPS}>
-          <input type="hidden" name="kind" value="weekly" />
-          <button className="btn-outline">週次レポートを今すぐ作る</button>
-        </ActionForm>
+        <div className="flex flex-wrap gap-2">
+          {conn && (
+            <ActionForm action={syncNow} progressSteps={["Instagramから投稿とインサイトを取得しています…", "紐付け候補を探しています…"]}>
+              <button className="btn">Instagramから今すぐ取得</button>
+            </ActionForm>
+          )}
+          <ActionForm action={makeReport} progressSteps={REPORT_STEPS}>
+            <input type="hidden" name="kind" value="weekly" />
+            <button className="btn-outline">週次レポートを今すぐ作る</button>
+          </ActionForm>
+        </div>
       </div>
+      {conn ? (
+        <p className="text-sm text-stone-600">
+          @{conn.ig_username} の投稿とインサイトは毎日自動で取得します。新しい投稿は、完成報告のキャプションと比べて紐付け候補を出します。
+        </p>
+      ) : (
+        <p className="text-sm text-stone-600">
+          Instagram未連携です。<a href="/settings" className="underline">設定</a>から連携すると、投稿とインサイトを自動で取得します。
+        </p>
+      )}
 
       <section className="card">
         <h2 className="h2">公開した投稿を登録する</h2>
@@ -112,6 +132,10 @@ export default async function PostsPage() {
         return (
           <section key={post.id} className="card space-y-4">
             <div className="flex flex-wrap items-center gap-2">
+              {post.thumbnail_url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={post.thumbnail_url} alt="" className="h-12 w-12 rounded-lg object-cover" />
+              )}
               <span className="badge">{POST_TYPE_LABELS[post.media_type ?? ""] ?? post.media_type}</span>
               {post.posted_at && <span className="text-sm text-stone-500">{fmt(post.posted_at)}</span>}
               {post.permalink && <a href={post.permalink} target="_blank" rel="noreferrer" className="text-sm underline">Instagramで見る</a>}
