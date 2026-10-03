@@ -14,6 +14,10 @@ export default async function SettingsPage() {
         <p className="mt-2 text-sm text-stone-600">
           {account.ig_username ? `@${account.ig_username} と連携中` : "未連携です（Instagram連携は次の開発ステップで追加します）。"}
         </p>
+        <p className="mt-2 text-sm text-stone-600">
+          連携が使えないときは、インサイト画面の
+          <a href="/posts#screenshot" className="mx-1 underline">スクショから数値を取り込めます</a>。
+        </p>
       </section>
 
       <section className="card">

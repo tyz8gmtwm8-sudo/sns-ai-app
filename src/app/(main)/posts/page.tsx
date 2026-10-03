@@ -1,5 +1,5 @@
 import { requireOnboardedAccount } from "@/lib/account";
-import { addPost, confirmLink, makeReport, saveInsights } from "@/app/actions/posts";
+import { addPost, confirmLink, makeReport, readScreenshot, saveInsights } from "@/app/actions/posts";
 import { ActionForm } from "@/components/ActionForm";
 import { POST_TYPE_LABELS } from "@/lib/constants";
 
@@ -73,6 +73,37 @@ export default async function PostsPage() {
             {planSelect()}
           </div>
           <div><button className="btn">登録する</button></div>
+        </ActionForm>
+      </section>
+
+      <section id="screenshot" className="card scroll-mt-20">
+        <h2 className="h2">📷 スクショから数値を読み取る</h2>
+        <p className="mt-1 text-xs text-stone-500">
+          Instagramアプリで投稿の「インサイトを見る」を開き、数字が写った画面のスクショを選んでください（3枚・合計3.5MBまで）。
+        </p>
+        <ActionForm
+          action={readScreenshot}
+          className="mt-3 grid gap-3 sm:grid-cols-2"
+          progressSteps={["AIがスクショの数字を読み取っています…", "もう少しです…"]}
+        >
+          <div>
+            <label className="label">どの投稿の数値？</label>
+            <select name="post_id" className="input" defaultValue="">
+              <option value="" disabled>選んでください</option>
+              <option value="new">＋ 新しい投稿として登録する</option>
+              {posts.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.posted_at ? fmt(p.posted_at) : "日時不明"}／{POST_TYPE_LABELS[p.media_type ?? ""] ?? p.media_type}
+                  {planTitle(p.plan_id) ? `／${planTitle(p.plan_id)}` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="label">スクショ（複数選べます）</label>
+            <input name="screenshots" type="file" accept="image/*" multiple className="text-sm" />
+          </div>
+          <div><button className="btn">読み取って保存</button></div>
         </ActionForm>
       </section>
 

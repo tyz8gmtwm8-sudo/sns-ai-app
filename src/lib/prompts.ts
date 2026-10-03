@@ -10,7 +10,8 @@ export type AgentName =
   | "writer" // 投稿作成AI
   | "video" // 動画構成AI
   | "analyst" // 分析AI
-  | "hearing"; // AIヒアリング
+  | "hearing" // AIヒアリング
+  | "screenshot"; // スクショ読み取り
 
 export async function loadPrompt(name: AgentName): Promise<string> {
   const file = path.join(process.cwd(), "prompts", `${name}.md`);
