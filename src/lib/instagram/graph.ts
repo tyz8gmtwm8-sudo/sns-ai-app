@@ -48,6 +48,10 @@ export function buildLoginUrl(redirectUri: string, state: string) {
   url.searchParams.set("redirect_uri", redirectUri);
   url.searchParams.set("state", state); // なりすまし防止の合言葉
   url.searchParams.set("scope", SCOPES.join(","));
+  // ビジネスタイプのアプリ（Facebook Login for Business）では、
+  // 権限は「設定（configuration）」で決めて、そのIDを渡す
+  const configId = process.env.META_LOGIN_CONFIG_ID;
+  if (configId) url.searchParams.set("config_id", configId);
   url.searchParams.set("response_type", "code");
   return url.toString();
 }
