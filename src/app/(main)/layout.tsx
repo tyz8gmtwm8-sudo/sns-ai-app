@@ -25,10 +25,11 @@ export default async function MainLayout({ children }: LayoutProps<"/">) {
   return (
     <>
       <header className="sticky top-0 z-10 border-b border-stone-200 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-3 text-sm">
+        {/* スマホなど幅が狭いときは、メニューを2段目に回す（flex-wrap と order-last） */}
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 text-sm">
           <Link href="/dashboard" className="shrink-0 font-bold">📸 運用AI</Link>
           <AccountSwitcher current={account} accounts={accounts} />
-          <nav className="flex min-w-0 gap-3 overflow-x-auto whitespace-nowrap text-stone-600">
+          <nav className="order-last flex w-full gap-4 overflow-x-auto whitespace-nowrap text-stone-600 sm:order-none sm:w-auto sm:gap-3">
             {NAV.map((n) => (
               <Link key={n.href} href={n.href} className="hover:text-stone-900">{n.label}</Link>
             ))}
