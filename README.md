@@ -47,7 +47,16 @@ npm install                  # 必要なライブラリをインストール
 npm run dev                  # 開発サーバーを起動 → http://localhost:3000
 ```
 
+## 本番環境
+
+- URL：https://sns-ai-app-plum.vercel.app
+- `main` ブランチにプッシュすると、Vercelに自動で公開されます
+- 毎朝7時台（日本時間）に `/api/cron/daily` が動き、Instagramのデータ取得・レポート作成を行います
+
 ## 開発の進み具合
 
 - [x] Day 1：Instagram連携なしで、手入力でサイクルが一周する状態
-- [ ] Day 2：Instagram連携・競合分析・定期実行・メール通知・スクショ読み取り・デプロイ
+- [x] 複数アカウント対応（1つのログインでアカウントを切り替え）
+- [x] Day 2：スクショ読み取り・メール通知
+- [x] Day 2：Instagram連携・競合分析・定期実行
+- [x] Day 2：Vercelにデプロイ
