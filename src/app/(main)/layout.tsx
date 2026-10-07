@@ -7,6 +7,7 @@ export const maxDuration = 120;
 
 const NAV = [
   { href: "/dashboard", label: "ダッシュボード" },
+  { href: "/ideas", label: "ネタ帳" },
   { href: "/plans", label: "企画" },
   { href: "/posts", label: "投稿" },
   { href: "/reports", label: "レポート" },

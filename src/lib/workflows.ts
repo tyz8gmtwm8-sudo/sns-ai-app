@@ -2,7 +2,8 @@
 // （要件定義書 7章「運用サイクル」の 1〜7 に対応）
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { runResearch } from "@/lib/agents/research";
-import { runPlanner } from "@/lib/agents/planner";
+import { runPlanRevision, runPlanner, type PlanDraft } from "@/lib/agents/planner";
+import { loadIdeasForAI } from "@/lib/ideas";
 import { runWriter } from "@/lib/agents/writer";
 import { runVideo } from "@/lib/agents/video";
 import { runAnalyst } from "@/lib/agents/analyst";
@@ -15,8 +16,17 @@ import type { Account, ChiefSummary, Materials, Plan } from "@/lib/types";
 type Ctx = { supabase: SupabaseClient; userId: string; account: Account };
 
 // ---------- 1. 企画案を3件提案する ----------
-export async function proposePlans(ctx: Ctx, instruction?: string) {
+export async function proposePlans(ctx: Ctx, opts: { instruction?: string; ideaIds?: string[] } = {}) {
   const { supabase, userId, account } = ctx;
+  const { instruction, ideaIds = [] } = opts;
+
+  // ネタ帳（選ばれたネタの事実と写真）と、前回出した案（作り直しのとき）
+  const ideas = await loadIdeasForAI(supabase, ideaIds);
+  const { data: previous } = await supabase
+    .from("plans")
+    .select("title, post_type, concept, reason")
+    .eq("account_id", account.id)
+    .eq("status", "proposed");
 
   // リサーチAIでネタ集め
   const research = await runResearch(account);
@@ -46,6 +56,8 @@ export async function proposePlans(ctx: Ctx, instruction?: string) {
     researchMemo: research.text,
     competitorSummary: competitor ? JSON.stringify(competitor.analysis) : "",
     pastImprovements,
+    ideas,
+    previousPlans: (previous ?? []) as PlanDraft[],
     instruction,
   });
 
@@ -60,11 +72,22 @@ export async function proposePlans(ctx: Ctx, instruction?: string) {
       batch_id: batchId,
       research_memo_id: memo?.id ?? null,
       recommendation: result.recommended_post_type,
+      idea_ids: ideaIds,
       ...p,
     })),
   );
   if (error) throw new Error(`企画の保存に失敗しました: ${error.message}`);
   return batchId;
+}
+
+// ---------- 企画案を1件だけ修正する ----------
+export async function revisePlan(ctx: Ctx, planId: string, instruction: string) {
+  const { supabase, account } = ctx;
+  const plan = await getPlan(supabase, account.id, planId);
+  const ideas = await loadIdeasForAI(supabase, plan.idea_ids ?? []);
+  const revised = await runPlanRevision({ account, current: { ...plan, reason: plan.reason ?? "" }, instruction, ideas });
+  const { error } = await supabase.from("plans").update(revised).eq("id", planId);
+  if (error) throw new Error(`企画の保存に失敗しました: ${error.message}`);
 }
 
 // ---------- 2〜3. 採用 → 素材作成 → 人間へのタスク指示 ----------
@@ -85,8 +108,10 @@ export async function adoptPlan(ctx: Ctx, planId: string) {
   await supabase.from("plans").update({ status: "rejected" }).eq("batch_id", plan.batch_id).neq("id", planId);
   await supabase.from("plans").update({ status: "adopted", adopted_at: new Date().toISOString() }).eq("id", planId);
 
-  // 投稿作成AIと動画構成AIを同時に動かす（待ち時間を短くするため）
-  const [written, video] = await Promise.all([runWriter({ account, plan }), runVideo({ account, plan })]);
+  // ネタ帳の事実を渡して、投稿作成AIと動画構成AIを同時に動かす（待ち時間を短くするため）
+  const ideas = await loadIdeasForAI(supabase, plan.idea_ids ?? []);
+  const [written, video] = await Promise.all([runWriter({ account, plan, ideas }), runVideo({ account, plan, ideas })]);
+  if (plan.idea_ids?.length) await supabase.from("ideas").update({ status: "used" }).in("id", plan.idea_ids);
   const materials = { ...written, ...video };
 
   const { error } = await supabase
@@ -118,19 +143,28 @@ export async function adoptPlan(ctx: Ctx, planId: string) {
 
 // ---------- 素材の一部を再生成する（F-12） ----------
 export type RegenTarget = "caption" | "hashtags" | "bgm" | "telops" | "structure";
+const TARGET_LABELS: Record<RegenTarget, string> = {
+  caption: "キャプション",
+  hashtags: "ハッシュタグ",
+  bgm: "BGM候補",
+  telops: "テロップ",
+  structure: "リール構成案と撮影リスト",
+};
 
 export async function regenerateMaterial(ctx: Ctx, planId: string, target: RegenTarget, instruction: string) {
   const { supabase, account } = ctx;
   const plan = await getPlan(supabase, account.id, planId);
   const { data: current } = await supabase.from("materials").select("*").eq("plan_id", planId).single();
-  const focus = `${instruction}\n（今回は「${target}」だけを作り直します。他の項目は今の内容のままで構いません）`;
+  // 写真は採用時に読んでいるので、再生成では文章だけ渡す（速くするため）
+  const ideas = await loadIdeasForAI(supabase, plan.idea_ids ?? [], { withPhotos: false });
+  const focus = `${instruction}\n（今回作り直すのは「${TARGET_LABELS[target]}」だけです。今の内容をもとに、指示に沿って変えてください）`;
 
   let update: Partial<Materials>;
   if (target === "structure") {
-    const v = await runVideo({ account, plan, current: current as Materials, instruction: focus });
+    const v = await runVideo({ account, plan, current: current as Materials, ideas, instruction: focus });
     update = { reel_structure: v.reel_structure, shot_list: v.shot_list };
   } else {
-    const w = await runWriter({ account, plan, current: current as Materials, instruction: focus });
+    const w = await runWriter({ account, plan, current: current as Materials, ideas, instruction: focus });
     update = { [target]: w[target] };
   }
   await supabase.from("materials").update({ ...update, updated_at: new Date().toISOString() }).eq("plan_id", planId);
