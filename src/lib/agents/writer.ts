@@ -7,7 +7,8 @@ import { describeAccount } from "./context";
 const schema = {
   type: "object",
   properties: {
-    caption: { type: "string" },
+    // 改行がないと読みにくいので、改行の入れ方も伝える
+    caption: { type: "string", description: "投稿のキャプション。段落ごとに改行（\\n）と空行を入れる。ハッシュタグは含めない。" },
     hashtags: {
       type: "object",
       properties: {

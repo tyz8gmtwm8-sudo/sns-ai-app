@@ -45,7 +45,7 @@ export default async function MaterialsPage({ params }: PageProps<"/plans/[id]/m
       ) : (
         <>
           <MaterialSection planId={id} target="caption" title="キャプション" copyText={`${m.caption ?? ""}\n\n${hashtagText(m.hashtags)}`}>
-            <textarea name="caption" rows={10} className="input" defaultValue={m.caption ?? ""} />
+            <textarea name="caption" rows={22} className="input" defaultValue={m.caption ?? ""} />
           </MaterialSection>
 
           <MaterialSection
