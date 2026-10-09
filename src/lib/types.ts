@@ -33,6 +33,7 @@ export type Plan = {
   status: string;
   created_at: string;
   adopted_at: string | null;
+  idea_ids?: string[]; // どのネタ帳のネタから作ったか
 };
 
 export type Hashtags = { large: string[]; medium: string[]; small: string[] };
