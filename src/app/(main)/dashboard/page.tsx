@@ -9,7 +9,7 @@ import { getConnection } from "@/lib/instagram/sync";
 export default async function DashboardPage() {
   const { supabase, account } = await requireOnboardedAccount();
 
-  const [{ data: tasks }, { data: activePlans }, { data: proposed }, { data: latestReport }, { data: notifications }] =
+  const [{ data: tasks }, { data: activePlans }, { data: latestReport }, { data: notifications }] =
     await Promise.all([
       supabase.from("tasks").select("*").eq("account_id", account.id).eq("status", "todo").order("created_at").order("sort"),
       supabase
@@ -18,7 +18,6 @@ export default async function DashboardPage() {
         .eq("account_id", account.id)
         .in("status", ["adopted", "materials_ready", "reported", "posted"])
         .order("adopted_at", { ascending: false }),
-      supabase.from("plans").select("id").eq("account_id", account.id).eq("status", "proposed").limit(1),
       supabase.from("reports").select("*").eq("account_id", account.id).neq("kind", "competitor").order("created_at", { ascending: false }).limit(1).maybeSingle(),
       supabase.from("notifications").select("*").eq("account_id", account.id).is("read_at", null).order("created_at", { ascending: false }).limit(5),
     ]);
@@ -78,12 +77,8 @@ export default async function DashboardPage() {
           </ul>
         ) : (
           <div className="mt-3 text-sm text-stone-600">
-            {proposed?.length ? (
-              <p>企画案が届いています。1件選んで採用しましょう。</p>
-            ) : (
-              <p>{hasWork ? "今やるタスクはありません。" : "まずはAIチームに企画を提案してもらいましょう。"}</p>
-            )}
-            <Link href="/plans" className="btn mt-3">{proposed?.length ? "企画案を見る" : "企画を提案してもらう"}</Link>
+            <p>{hasWork ? "今やるタスクはありません。" : "まずはネタ帳にネタを登録して、投稿を作ってみましょう。"}</p>
+            <Link href="/ideas" className="btn mt-3">ネタ帳を開く</Link>
           </div>
         )}
       </section>

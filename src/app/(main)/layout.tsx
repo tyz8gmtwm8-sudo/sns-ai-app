@@ -3,7 +3,7 @@ import { requireOnboardedAccount } from "@/lib/account";
 import { AccountSwitcher } from "@/components/AccountSwitcher";
 
 // AI生成は時間がかかるので、このグループの画面から呼ぶ処理の最大時間を延ばす（秒）
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 const NAV = [
   { href: "/dashboard", label: "ダッシュボード" },

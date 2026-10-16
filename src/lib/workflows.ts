@@ -1,8 +1,7 @@
 // 運用サイクルの処理：編集長AIが各AIを順に呼び出し、結果をDBに保存する
 // （要件定義書 7章「運用サイクル」の 1〜7 に対応）
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { runResearch } from "@/lib/agents/research";
-import { runPlanRevision, runPlanner, type PlanDraft } from "@/lib/agents/planner";
+import { runIdeaReview, runPlanFromIdea, type AnalysisContext } from "@/lib/agents/planner";
 import { loadIdeasForAI } from "@/lib/ideas";
 import { runWriter } from "@/lib/agents/writer";
 import { runVideo } from "@/lib/agents/video";
@@ -15,32 +14,12 @@ import type { Account, ChiefSummary, Materials, Plan } from "@/lib/types";
 
 type Ctx = { supabase: SupabaseClient; userId: string; account: Account };
 
-// ---------- 1. 企画案を3件提案する ----------
-export async function proposePlans(ctx: Ctx, opts: { instruction?: string; ideaIds?: string[] } = {}) {
-  const { supabase, userId, account } = ctx;
-  const { instruction, ideaIds = [] } = opts;
-
-  // ネタ帳（選ばれたネタの事実と写真）と、前回出した案（作り直しのとき）
-  const ideas = await loadIdeasForAI(supabase, ideaIds);
-  const { data: previous } = await supabase
-    .from("plans")
-    .select("title, post_type, concept, reason")
-    .eq("account_id", account.id)
-    .eq("status", "proposed");
-
-  // リサーチAIでネタ集め
-  const research = await runResearch(account);
-  const { data: memo } = await supabase
-    .from("research_memos")
-    .insert({ user_id: userId, account_id: account.id, content: research.text, sources: research.sources })
-    .select("id")
-    .single();
-
-  // 競合分析と過去の改善案を集める
+// ---------- 分析でわかったことを集める（企画づくりとネタ帳の見直しで使う） ----------
+async function loadAnalysis(supabase: SupabaseClient, accountId: string): Promise<AnalysisContext> {
   const { data: reports } = await supabase
     .from("reports")
     .select("kind, analysis, summary")
-    .eq("account_id", account.id)
+    .eq("account_id", accountId)
     .order("created_at", { ascending: false })
     .limit(10);
   const competitor = reports?.find((r) => r.kind === "competitor");
@@ -49,45 +28,68 @@ export async function proposePlans(ctx: Ctx, opts: { instruction?: string; ideaI
     .slice(0, 3)
     .flatMap((r) => (r.summary as ChiefSummary | null)?.improvements ?? [])
     .join("\n");
-
-  // 企画AIで3件作る
-  const result = await runPlanner({
-    account,
-    researchMemo: research.text,
-    competitorSummary: competitor ? JSON.stringify(competitor.analysis) : "",
-    pastImprovements,
-    ideas,
-    previousPlans: (previous ?? []) as PlanDraft[],
-    instruction,
-  });
-
-  // 前回の未採用の提案は「不採用」にしておく
-  await supabase.from("plans").update({ status: "rejected" }).eq("account_id", account.id).eq("status", "proposed");
-
-  const batchId = crypto.randomUUID();
-  const { error } = await supabase.from("plans").insert(
-    result.plans.map((p) => ({
-      user_id: userId,
-      account_id: account.id,
-      batch_id: batchId,
-      research_memo_id: memo?.id ?? null,
-      recommendation: result.recommended_post_type,
-      idea_ids: ideaIds,
-      ...p,
-    })),
-  );
-  if (error) throw new Error(`企画の保存に失敗しました: ${error.message}`);
-  return batchId;
+  return { competitorSummary: competitor ? JSON.stringify(competitor.analysis) : "", pastImprovements };
 }
 
-// ---------- 企画案を1件だけ修正する ----------
-export async function revisePlan(ctx: Ctx, planId: string, instruction: string) {
-  const { supabase, account } = ctx;
-  const plan = await getPlan(supabase, account.id, planId);
-  const ideas = await loadIdeasForAI(supabase, plan.idea_ids ?? []);
-  const revised = await runPlanRevision({ account, current: { ...plan, reason: plan.reason ?? "" }, instruction, ideas });
-  const { error } = await supabase.from("plans").update(revised).eq("id", planId);
-  if (error) throw new Error(`企画の保存に失敗しました: ${error.message}`);
+// ---------- 1. ネタ帳のネタから企画を1件作り、そのまま素材づくりまで進める ----------
+export async function createPostFromIdea(ctx: Ctx, ideaId: string, instruction?: string) {
+  const { supabase, userId, account } = ctx;
+
+  // ネタの事実と写真・アドバイスを読み込む
+  const { data: idea } = await supabase.from("ideas").select("advice").eq("id", ideaId).eq("account_id", account.id).maybeSingle();
+  if (!idea) throw new Error("ネタが見つかりませんでした");
+  const ideas = await loadIdeasForAI(supabase, [ideaId]);
+  if (idea.advice) ideas.text += `\n（AIのアドバイス：${idea.advice}）`;
+
+  // 企画AIで1件作る
+  const draft = await runPlanFromIdea({ account, analysis: await loadAnalysis(supabase, account.id), ideas, instruction });
+  const { data: plan, error } = await supabase
+    .from("plans")
+    .insert({ user_id: userId, account_id: account.id, batch_id: crypto.randomUUID(), idea_ids: [ideaId], ...draft })
+    .select("id")
+    .single();
+  if (error || !plan) throw new Error(`企画の保存に失敗しました: ${error?.message}`);
+
+  // そのまま採用して、キャプション・動画構成・タスクを作る
+  await adoptPlan(ctx, plan.id);
+  return plan.id as string;
+}
+
+// ---------- 分析をもとにネタ帳を見直す（AIからの提案・ネタごとのアドバイス） ----------
+export async function reviewIdeas(ctx: Ctx) {
+  const { supabase, userId, account } = ctx;
+  const { data } = await supabase
+    .from("ideas")
+    .select("id, title, memo, status")
+    .eq("account_id", account.id)
+    .order("created_at", { ascending: false });
+  const all = data ?? [];
+  // 新しい順に最大20件（多すぎるとAIの利用量が増えるため）
+  const unused = all.filter((i) => i.status === "unused").slice(0, 20);
+  const usedTitles = all.filter((i) => i.status === "used").map((i) => i.title);
+
+  const review = await runIdeaReview({ account, analysis: await loadAnalysis(supabase, account.id), unusedIdeas: unused, usedTitles });
+
+  // 前回の提案のうち、ネタ帳に追加されなかったものは入れ替える
+  await supabase.from("ideas").delete().eq("account_id", account.id).eq("status", "suggested");
+  const now = new Date().toISOString();
+  if (review.suggestions.length) {
+    await supabase.from("ideas").insert(
+      review.suggestions.map((s) => ({
+        user_id: userId,
+        account_id: account.id,
+        title: s.title,
+        advice: s.advice,
+        advice_at: now,
+        status: "suggested",
+      })),
+    );
+  }
+  // 番号（ネタ1, ネタ2…）でアドバイスを各ネタに戻す
+  for (const a of review.advice) {
+    const target = unused[a.idea_no - 1];
+    if (target) await supabase.from("ideas").update({ advice: a.advice, advice_at: now }).eq("id", target.id);
+  }
 }
 
 // ---------- 2〜3. 採用 → 素材作成 → 人間へのタスク指示 ----------

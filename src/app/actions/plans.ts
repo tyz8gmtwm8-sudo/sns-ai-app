@@ -4,24 +4,11 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireOnboardedAccount, requireUser } from "@/lib/account";
 import { toErrorState, type ActionState } from "@/lib/action-state";
-import { adoptPlan, proposePlans, regenerateMaterial, revisePlan, submitCompletion, type RegenTarget } from "@/lib/workflows";
+import { adoptPlan, regenerateMaterial, submitCompletion, type RegenTarget } from "@/lib/workflows";
 import type { Bgm, Cut } from "@/lib/types";
 
 // ---------- S-05 企画 ----------
-export async function generatePlans(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  try {
-    const ctx = await requireOnboardedAccount();
-    await proposePlans(ctx, {
-      instruction: String(formData.get("instruction") ?? "").trim() || undefined,
-      ideaIds: formData.getAll("idea_ids").map(String).filter(Boolean),
-    });
-  } catch (e) {
-    return toErrorState(e);
-  }
-  revalidatePath("/", "layout");
-  redirect("/plans");
-}
-
+// 以前に提案された企画（まだ採用していないもの）を採用する
 export async function adopt(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const planId = String(formData.get("plan_id"));
   try {
@@ -32,21 +19,6 @@ export async function adopt(_prev: ActionState, formData: FormData): Promise<Act
   }
   revalidatePath("/", "layout");
   redirect(`/plans/${planId}/materials`);
-}
-
-/** 企画案を1件だけ、指示どおりに修正する */
-export async function revise(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const planId = String(formData.get("plan_id"));
-  const instruction = String(formData.get("instruction") ?? "").trim();
-  if (!instruction) return { error: "どう直してほしいかを入力してください" };
-  try {
-    const ctx = await requireOnboardedAccount();
-    await revisePlan(ctx, planId, instruction);
-  } catch (e) {
-    return toErrorState(e);
-  }
-  revalidatePath("/plans");
-  return { message: "修正しました" };
 }
 
 /**

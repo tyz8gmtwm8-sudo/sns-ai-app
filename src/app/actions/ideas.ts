@@ -1,8 +1,10 @@
 "use server";
 // ネタ帳に関するServer Action
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireOnboardedAccount } from "@/lib/account";
 import { toErrorState, type ActionState } from "@/lib/action-state";
+import { createPostFromIdea, reviewIdeas } from "@/lib/workflows";
 
 const MAX_PHOTOS = 3;
 const MAX_TOTAL_BYTES = 3.5 * 1024 * 1024; // サーバーへ送れる上限(4MB)より少し小さく
@@ -64,4 +66,54 @@ export async function reuseIdea(formData: FormData) {
   await supabase.from("ideas").update({ status: "unused" }).eq("id", id).eq("account_id", account.id);
   revalidatePath("/ideas");
   revalidatePath("/plans");
+}
+
+/** このネタで投稿を作る（企画1件と、キャプション・動画構成などの素材をまとめて作る） */
+export async function createFromIdea(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const ideaId = String(formData.get("idea_id"));
+  const instruction = String(formData.get("instruction") ?? "").trim() || undefined;
+  let planId: string;
+  try {
+    const ctx = await requireOnboardedAccount();
+    planId = await createPostFromIdea(ctx, ideaId, instruction);
+  } catch (e) {
+    return toErrorState(e);
+  }
+  revalidatePath("/", "layout");
+  redirect(`/plans/${planId}/materials`);
+}
+
+/** 分析をもとに、AIにネタ帳を見直してもらう（次に撮るネタの提案・ネタごとのアドバイス） */
+export async function review(): Promise<ActionState> {
+  try {
+    const ctx = await requireOnboardedAccount();
+    await reviewIdeas(ctx);
+  } catch (e) {
+    return toErrorState(e);
+  }
+  revalidatePath("/ideas");
+  return { message: "AIの提案とアドバイスを更新しました" };
+}
+
+/** AIからの提案を、ネタ帳に追加する（実際に行ったら、メモと写真を足してもらう） */
+export async function acceptSuggestion(formData: FormData) {
+  const id = String(formData.get("idea_id"));
+  const { supabase, account } = await requireOnboardedAccount();
+  await supabase.from("ideas").update({ status: "unused" }).eq("id", id).eq("account_id", account.id).eq("status", "suggested");
+  revalidatePath("/ideas");
+}
+
+/** 登録したネタのメモを書き足す（AIの提案から追加したネタに、行ったあとの事実を足すため） */
+export async function updateIdeaMemo(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const id = String(formData.get("idea_id"));
+  const memo = String(formData.get("memo") ?? "").trim();
+  try {
+    const { supabase, account } = await requireOnboardedAccount();
+    const { error } = await supabase.from("ideas").update({ memo }).eq("id", id).eq("account_id", account.id);
+    if (error) throw new Error(error.message);
+  } catch (e) {
+    return toErrorState(e);
+  }
+  revalidatePath("/ideas");
+  return { message: "メモを保存しました" };
 }
