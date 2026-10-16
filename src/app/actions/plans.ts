@@ -49,6 +49,25 @@ export async function revise(_prev: ActionState, formData: FormData): Promise<Ac
   return { message: "修正しました" };
 }
 
+/**
+ * 企画を削除する
+ * 素材・完成報告・タスクはデータベースの設定で一緒に消える。投稿は残り、企画とのつながりだけ外れる
+ */
+export async function deletePlan(formData: FormData) {
+  const planId = String(formData.get("plan_id"));
+  const { supabase, account } = await requireOnboardedAccount();
+
+  // 完成報告で保存したサムネ画像は自動では消えないので、先に消しておく
+  const { data: reports } = await supabase.from("completion_reports").select("thumbnail_path").eq("plan_id", planId);
+  const paths = (reports ?? []).map((r) => r.thumbnail_path).filter(Boolean) as string[];
+  if (paths.length) await supabase.storage.from("thumbnails").remove(paths);
+
+  // 別のアカウントの企画は消せないように、アカウントIDも条件に入れる
+  await supabase.from("plans").delete().eq("id", planId).eq("account_id", account.id);
+  revalidatePath("/", "layout");
+  redirect("/plans");
+}
+
 // ---------- S-06 素材の編集・再生成 ----------
 export async function saveMaterial(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const planId = String(formData.get("plan_id"));

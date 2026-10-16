@@ -4,6 +4,7 @@ import { adopt, generatePlans, revise } from "@/app/actions/plans";
 import { InstructionInput } from "@/components/InstructionInput";
 import type { Idea } from "@/lib/ideas";
 import { ActionForm } from "@/components/ActionForm";
+import { DeletePlanButton } from "@/components/DeletePlanButton";
 import { PLAN_STATUS_LABELS, POST_TYPE_LABELS } from "@/lib/constants";
 import type { Plan } from "@/lib/types";
 
@@ -58,6 +59,7 @@ export default async function PlansPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-stone-500">案{i + 1}</span>
                   <span className="badge">{POST_TYPE_LABELS[p.post_type]}</span>
+                  <DeletePlanButton planId={p.id} className="ml-auto" />
                 </div>
                 <h2 className="mt-2 font-bold">{p.title}</h2>
                 <p className="mt-2 whitespace-pre-wrap text-sm text-stone-700">{p.concept}</p>
@@ -141,6 +143,7 @@ export default async function PlansPage() {
                 {p.status !== "rejected" && (
                   <Link href={`/plans/${p.id}/materials`} className="underline">素材</Link>
                 )}
+                <DeletePlanButton planId={p.id} />
               </li>
             ))}
           </ul>

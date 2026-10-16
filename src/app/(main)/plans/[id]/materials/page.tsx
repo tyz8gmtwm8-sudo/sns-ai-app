@@ -4,6 +4,7 @@ import { requireOnboardedAccount } from "@/lib/account";
 import { PLAN_STATUS_LABELS, POST_TYPE_LABELS } from "@/lib/constants";
 import type { Bgm, Cut, Hashtags, Materials, Plan } from "@/lib/types";
 import { MaterialSection } from "./MaterialSection";
+import { DeletePlanButton } from "@/components/DeletePlanButton";
 
 const hashtagText = (h: Hashtags | null) =>
   h ? [...h.large, ...h.medium, ...h.small].map((t) => "#" + t).join(" ") : "";
@@ -32,9 +33,10 @@ export default async function MaterialsPage({ params }: PageProps<"/plans/[id]/m
   return (
     <div className="space-y-6">
       <div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <span className="badge">{POST_TYPE_LABELS[p.post_type]}</span>
           <span className="badge bg-amber-100 text-amber-900">{PLAN_STATUS_LABELS[p.status]}</span>
+          <DeletePlanButton planId={p.id} className="ml-auto" />
         </div>
         <h1 className="h1 mt-2">{p.title}</h1>
         <p className="mt-2 whitespace-pre-wrap text-sm text-stone-600">{p.concept}</p>
