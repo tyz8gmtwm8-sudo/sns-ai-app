@@ -6,7 +6,7 @@ import type { Account } from "@/lib/types";
 
 export type AgentName =
   | "chief" // 編集長AI
-  | "research" // リサーチAI
+  | "idea-review" // ネタ帳の見直し（企画AI）
   | "planner" // 企画AI
   | "writer" // 投稿作成AI
   | "video" // 動画構成AI

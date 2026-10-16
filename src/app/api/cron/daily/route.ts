@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notify";
 import { analyzeCompetitors, getConnection, runScheduledReports, syncInstagram } from "@/lib/instagram/sync";
+import { reviewIdeas } from "@/lib/workflows";
 import type { Account } from "@/lib/types";
 
 // 処理に時間がかかるので、最大実行時間を延ばす（秒）
@@ -47,6 +48,11 @@ export async function GET(request: Request) {
           await analyzeCompetitors(ctx);
           done.push("競合分析を作成");
         }
+      }
+      // 月曜は、分析の結果をもとにネタ帳を見直す（AIからの提案・ネタごとのアドバイス）
+      if (isMonday && Date.now() - started < TIME_BUDGET_MS) {
+        await reviewIdeas(ctx);
+        done.push("ネタ帳の提案を更新");
       }
       const detail = done.join("、") || "対象なし";
       await supabase.from("job_runs").insert({ user_id: account.user_id, account_id: account.id, job: "daily", status: "success", detail });

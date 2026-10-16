@@ -4,24 +4,11 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireOnboardedAccount, requireUser } from "@/lib/account";
 import { toErrorState, type ActionState } from "@/lib/action-state";
-import { adoptPlan, proposePlans, regenerateMaterial, revisePlan, submitCompletion, type RegenTarget } from "@/lib/workflows";
+import { adoptPlan, regenerateMaterial, submitCompletion, type RegenTarget } from "@/lib/workflows";
 import type { Bgm, Cut } from "@/lib/types";
 
 // ---------- S-05 企画 ----------
-export async function generatePlans(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  try {
-    const ctx = await requireOnboardedAccount();
-    await proposePlans(ctx, {
-      instruction: String(formData.get("instruction") ?? "").trim() || undefined,
-      ideaIds: formData.getAll("idea_ids").map(String).filter(Boolean),
-    });
-  } catch (e) {
-    return toErrorState(e);
-  }
-  revalidatePath("/", "layout");
-  redirect("/plans");
-}
-
+// 以前に提案された企画（まだ採用していないもの）を採用する
 export async function adopt(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const planId = String(formData.get("plan_id"));
   try {
@@ -34,19 +21,23 @@ export async function adopt(_prev: ActionState, formData: FormData): Promise<Act
   redirect(`/plans/${planId}/materials`);
 }
 
-/** 企画案を1件だけ、指示どおりに修正する */
-export async function revise(_prev: ActionState, formData: FormData): Promise<ActionState> {
+/**
+ * 企画を削除する
+ * 素材・完成報告・タスクはデータベースの設定で一緒に消える。投稿は残り、企画とのつながりだけ外れる
+ */
+export async function deletePlan(formData: FormData) {
   const planId = String(formData.get("plan_id"));
-  const instruction = String(formData.get("instruction") ?? "").trim();
-  if (!instruction) return { error: "どう直してほしいかを入力してください" };
-  try {
-    const ctx = await requireOnboardedAccount();
-    await revisePlan(ctx, planId, instruction);
-  } catch (e) {
-    return toErrorState(e);
-  }
-  revalidatePath("/plans");
-  return { message: "修正しました" };
+  const { supabase, account } = await requireOnboardedAccount();
+
+  // 完成報告で保存したサムネ画像は自動では消えないので、先に消しておく
+  const { data: reports } = await supabase.from("completion_reports").select("thumbnail_path").eq("plan_id", planId);
+  const paths = (reports ?? []).map((r) => r.thumbnail_path).filter(Boolean) as string[];
+  if (paths.length) await supabase.storage.from("thumbnails").remove(paths);
+
+  // 別のアカウントの企画は消せないように、アカウントIDも条件に入れる
+  await supabase.from("plans").delete().eq("id", planId).eq("account_id", account.id);
+  revalidatePath("/", "layout");
+  redirect("/plans");
 }
 
 // ---------- S-06 素材の編集・再生成 ----------

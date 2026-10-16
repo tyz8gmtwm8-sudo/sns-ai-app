@@ -7,7 +7,9 @@ export type Idea = {
   title: string;
   memo: string;
   photo_paths: string[];
-  status: "unused" | "used";
+  status: "unused" | "used" | "suggested"; // suggested = AIからの提案（まだネタ帳に追加していない）
+  advice: string | null; // 分析をもとにしたAIのアドバイス
+  advice_at: string | null;
   created_at: string;
 };
 
