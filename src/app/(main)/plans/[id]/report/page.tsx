@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { requireOnboardedAccount } from "@/lib/account";
 import { reportCompletion } from "@/app/actions/plans";
 import { ActionForm } from "@/components/ActionForm";
+import { PlanSteps } from "@/components/PlanSteps";
 import type { Hashtags, Plan, Review } from "@/lib/types";
 import { SubmitButton } from "@/components/SubmitButton";
 
@@ -37,6 +38,7 @@ export default async function ReportPage({ params }: PageProps<"/plans/[id]/repo
 
   return (
     <div className="space-y-6">
+      <PlanSteps planId={id} status={p.status} />
       <div>
         <Link href={`/plans/${id}/materials`} className="text-xs text-stone-500 underline">← 素材に戻る</Link>
         <h1 className="h1 mt-1">完成報告</h1>

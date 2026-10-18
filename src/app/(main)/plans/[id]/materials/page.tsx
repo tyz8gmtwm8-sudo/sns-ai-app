@@ -5,6 +5,7 @@ import { PLAN_STATUS_LABELS, POST_TYPE_LABELS } from "@/lib/constants";
 import type { Bgm, Cut, Hashtags, Materials, Plan } from "@/lib/types";
 import { MaterialSection } from "./MaterialSection";
 import { DeletePlanButton } from "@/components/DeletePlanButton";
+import { PlanSteps } from "@/components/PlanSteps";
 
 const hashtagText = (h: Hashtags | null) =>
   h ? [...h.large, ...h.medium, ...h.small].map((t) => "#" + t).join(" ") : "";
@@ -32,6 +33,7 @@ export default async function MaterialsPage({ params }: PageProps<"/plans/[id]/m
 
   return (
     <div className="space-y-6">
+      <PlanSteps planId={id} status={p.status} />
       <div>
         <div className="flex items-center gap-2">
           <span className="badge">{POST_TYPE_LABELS[p.post_type]}</span>
