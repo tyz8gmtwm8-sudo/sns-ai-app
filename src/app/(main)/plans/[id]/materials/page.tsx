@@ -4,7 +4,7 @@ import { requireOnboardedAccount } from "@/lib/account";
 import { PLAN_STATUS_LABELS, POST_TYPE_LABELS } from "@/lib/constants";
 import type { Bgm, Cut, Hashtags, Materials, Plan } from "@/lib/types";
 import { MaterialSection } from "./MaterialSection";
-import { MaterialTabs } from "./MaterialTabs";
+import { Tabs } from "@/components/Tabs";
 import { DeletePlanButton } from "@/components/DeletePlanButton";
 import { PlanSteps } from "@/components/PlanSteps";
 
@@ -40,6 +40,10 @@ export default async function MaterialsPage({ params }: PageProps<"/plans/[id]/m
           <span className="badge">{POST_TYPE_LABELS[p.post_type]}</span>
           <span className="badge bg-amber-100 text-amber-900">{PLAN_STATUS_LABELS[p.status]}</span>
           <DeletePlanButton planId={p.id} className="ml-auto" />
+          {/* 撮影・編集が終わったら、ここから完成報告へ進む */}
+          {m && !["posted", "done"].includes(p.status) && (
+            <Link href={`/plans/${id}/report`} className="btn px-3 py-1.5 text-xs">完成報告へ →</Link>
+          )}
         </div>
         <h1 className="h1 mt-2">{p.title}</h1>
         <p className="mt-2 whitespace-pre-wrap text-sm text-stone-600">{p.concept}</p>
@@ -49,7 +53,7 @@ export default async function MaterialsPage({ params }: PageProps<"/plans/[id]/m
         <p className="card text-sm text-stone-600">素材はまだありません。企画画面で採用すると作られます。</p>
       ) : (
         <>
-          <MaterialTabs
+          <Tabs
             tabs={[
               {
                 key: "caption",
@@ -159,10 +163,6 @@ export default async function MaterialsPage({ params }: PageProps<"/plans/[id]/m
               },
             ]}
           />
-          <div className="card flex flex-col items-start gap-3 bg-stone-900 text-white sm:flex-row sm:items-center">
-            <p className="flex-1 text-sm">撮影・編集が終わったら、最終キャプションとサムネを編集長AIに完成報告しましょう。</p>
-            <Link href={`/plans/${id}/report`} className="btn bg-white text-stone-900 hover:bg-stone-200">完成報告へ →</Link>
-          </div>
         </>
       )}
     </div>

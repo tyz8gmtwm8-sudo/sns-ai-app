@@ -1,11 +1,11 @@
 "use client";
-// 素材の項目（キャプション・ハッシュタグなど）をタブで切り替える
+// タブで表示を切り替える（素材の画面の項目、企画一覧の進行中・投稿済みなど）
 // 中身はすべて読み込んでおき、見えるかどうかだけを切り替える（入力途中の内容が消えないように）
 import { useState } from "react";
 
 type Tab = { key: string; label: string; content: React.ReactNode };
 
-export function MaterialTabs({ tabs }: { tabs: Tab[] }) {
+export function Tabs({ tabs }: { tabs: Tab[] }) {
   const [active, setActive] = useState(tabs[0]?.key);
   return (
     <div>

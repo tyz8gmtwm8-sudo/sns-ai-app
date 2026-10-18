@@ -53,3 +53,18 @@ export function PlanSteps({ planId, status }: { planId: string; status: string }
     </ol>
   );
 }
+
+/** 進み具合のバー（■■□□□ のような表示と、今の段階の名前） */
+export function PlanProgressBar({ status }: { status: string }) {
+  const prog = planProgress(status);
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex flex-1 gap-0.5" aria-hidden>
+        {Array.from({ length: prog.total }, (_, i) => (
+          <span key={i} className={`h-1.5 flex-1 rounded-full ${i < prog.current ? "bg-stone-900" : i === prog.current ? "bg-stone-400" : "bg-stone-200"}`} />
+        ))}
+      </div>
+      <span className="shrink-0 text-xs text-stone-500">{prog.label}</span>
+    </div>
+  );
+}

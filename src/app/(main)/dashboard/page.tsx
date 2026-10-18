@@ -5,7 +5,7 @@ import { POST_TYPE_LABELS, REPORT_KIND_LABELS } from "@/lib/constants";
 import type { ChiefSummary, Plan, Task } from "@/lib/types";
 import { getConnection } from "@/lib/instagram/sync";
 import { SubmitButton } from "@/components/SubmitButton";
-import { planProgress } from "@/components/PlanSteps";
+import { PlanProgressBar } from "@/components/PlanSteps";
 
 // S-04 ダッシュボード（画面3）
 export default async function DashboardPage() {
@@ -121,26 +121,17 @@ export default async function DashboardPage() {
             <h2 className="h2">進行中の企画</h2>
             {plans.length ? (
               <ul className="mt-3 space-y-2">
-                {plans.map((p) => {
-                  const prog = planProgress(p.status);
-                  return (
-                    <li key={p.id}>
-                      <Link href={`/plans/${p.id}/materials`} className="block rounded-xl border border-stone-200 p-3 hover:bg-stone-50">
-                        <p className="line-clamp-2 text-sm font-medium">{p.title}</p>
-                        {/* 進み具合：■■□□□ のようなバー */}
-                        <div className="mt-2 flex items-center gap-2">
-                          <div className="flex flex-1 gap-0.5" aria-hidden>
-                            {Array.from({ length: prog.total }, (_, i) => (
-                              <span key={i} className={`h-1.5 flex-1 rounded-full ${i < prog.current ? "bg-stone-900" : i === prog.current ? "bg-stone-400" : "bg-stone-200"}`} />
-                            ))}
-                          </div>
-                          <span className="shrink-0 text-xs text-stone-500">{prog.label}</span>
-                        </div>
-                        <span className="mt-1 inline-block text-[11px] text-stone-400">{POST_TYPE_LABELS[p.post_type]}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
+                {plans.map((p) => (
+                  <li key={p.id}>
+                    <Link href={`/plans/${p.id}/materials`} className="block rounded-xl border border-stone-200 p-3 hover:bg-stone-50">
+                      <p className="line-clamp-2 text-sm font-medium">{p.title}</p>
+                      <div className="mt-2">
+                        <PlanProgressBar status={p.status} />
+                      </div>
+                      <span className="mt-1 inline-block text-[11px] text-stone-400">{POST_TYPE_LABELS[p.post_type]}</span>
+                    </Link>
+                  </li>
+                ))}
               </ul>
             ) : (
               <p className="mt-3 text-sm text-stone-500">進行中の企画はありません。</p>
