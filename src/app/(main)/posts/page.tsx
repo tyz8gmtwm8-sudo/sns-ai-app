@@ -5,6 +5,7 @@ import { POST_TYPE_LABELS } from "@/lib/constants";
 import { syncNow } from "@/app/actions/instagram";
 import { getConnection } from "@/lib/instagram/sync";
 import { SubmitButton } from "@/components/SubmitButton";
+import { FileDrop } from "@/components/FileDrop";
 
 type Insight = { likes: number | null; comments: number | null; reach: number | null; saves: number | null; shares: number | null; plays: number | null; captured_at: string; source: string };
 type PostRow = {
@@ -122,7 +123,7 @@ export default async function PostsPage() {
           </div>
           <div>
             <label className="label">スクショ（複数選べます）</label>
-            <input name="screenshots" type="file" accept="image/*" multiple className="text-sm" />
+            <FileDrop name="screenshots" multiple what="スクショ" hint="複数選べます" />
           </div>
           <div><SubmitButton className="btn">読み取って保存</SubmitButton></div>
         </ActionForm>

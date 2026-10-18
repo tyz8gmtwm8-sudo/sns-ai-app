@@ -4,6 +4,7 @@ import { ActionForm } from "@/components/ActionForm";
 import { CreatePostForm } from "./CreatePostForm";
 import type { Idea } from "@/lib/ideas";
 import { SubmitButton } from "@/components/SubmitButton";
+import { FileDrop } from "@/components/FileDrop";
 
 // ジャンルごとの、メモの書き方の例
 const MEMO_EXAMPLES: Record<string, string> = {
@@ -59,7 +60,7 @@ export default async function IdeasPage() {
           </div>
           <div>
             <label className="label" htmlFor="photos">撮った写真（任意・3枚・合計3.5MBまで）</label>
-            <input id="photos" name="photos" type="file" accept="image/*" multiple className="text-sm" />
+            <FileDrop id="photos" name="photos" multiple hint="3枚・合計3.5MBまで" />
             <p className="mt-1 text-xs text-stone-500">写真があると、AIが「実際に撮れている素材」を見て企画を考えます。</p>
           </div>
           <SubmitButton className="btn">ネタ帳に追加</SubmitButton>
