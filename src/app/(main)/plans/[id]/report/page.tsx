@@ -4,6 +4,7 @@ import { requireOnboardedAccount } from "@/lib/account";
 import { reportCompletion } from "@/app/actions/plans";
 import { ActionForm } from "@/components/ActionForm";
 import type { Hashtags, Plan, Review } from "@/lib/types";
+import { SubmitButton } from "@/components/SubmitButton";
 
 // S-07 完成報告
 export default async function ReportPage({ params }: PageProps<"/plans/[id]/report">) {
@@ -57,7 +58,7 @@ export default async function ReportPage({ params }: PageProps<"/plans/[id]/repo
             <label className="label" htmlFor="thumbnail">サムネ画像（任意・3.5MBまで）</label>
             <input id="thumbnail" name="thumbnail" type="file" accept="image/*" className="text-sm" />
           </div>
-          <button className="btn">編集長AIに完成報告する</button>
+          <SubmitButton className="btn">編集長AIに完成報告する</SubmitButton>
         </ActionForm>
       </section>
 

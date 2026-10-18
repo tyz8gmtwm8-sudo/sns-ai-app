@@ -4,6 +4,7 @@ import { ActionForm } from "@/components/ActionForm";
 import { POST_TYPE_LABELS } from "@/lib/constants";
 import { syncNow } from "@/app/actions/instagram";
 import { getConnection } from "@/lib/instagram/sync";
+import { SubmitButton } from "@/components/SubmitButton";
 
 type Insight = { likes: number | null; comments: number | null; reach: number | null; saves: number | null; shares: number | null; plays: number | null; captured_at: string; source: string };
 type PostRow = {
@@ -51,12 +52,12 @@ export default async function PostsPage() {
         <div className="flex flex-wrap gap-2">
           {conn && (
             <ActionForm action={syncNow} progressSteps={["Instagramから投稿とインサイトを取得しています…", "紐付け候補を探しています…"]}>
-              <button className="btn">Instagramから今すぐ取得</button>
+              <SubmitButton className="btn">Instagramから今すぐ取得</SubmitButton>
             </ActionForm>
           )}
           <ActionForm action={makeReport} progressSteps={REPORT_STEPS}>
             <input type="hidden" name="kind" value="weekly" />
-            <button className="btn-outline">週次レポートを今すぐ作る</button>
+            <SubmitButton className="btn-outline">週次レポートを今すぐ作る</SubmitButton>
           </ActionForm>
         </div>
       </div>
@@ -92,7 +93,7 @@ export default async function PostsPage() {
             <label className="label">どの企画の投稿？</label>
             {planSelect()}
           </div>
-          <div><button className="btn">登録する</button></div>
+          <div><SubmitButton className="btn">登録する</SubmitButton></div>
         </ActionForm>
       </section>
 
@@ -123,7 +124,7 @@ export default async function PostsPage() {
             <label className="label">スクショ（複数選べます）</label>
             <input name="screenshots" type="file" accept="image/*" multiple className="text-sm" />
           </div>
-          <div><button className="btn">読み取って保存</button></div>
+          <div><SubmitButton className="btn">読み取って保存</SubmitButton></div>
         </ActionForm>
       </section>
 
@@ -149,7 +150,7 @@ export default async function PostsPage() {
               <ActionForm action={confirmLink} className="flex flex-col gap-2 rounded-lg bg-amber-50 p-3 sm:flex-row">
                 <input type="hidden" name="post_id" value={post.id} />
                 {planSelect(post.plan_id)}
-                <button className="btn shrink-0">この企画と紐付けを確定</button>
+                <SubmitButton className="btn shrink-0">この企画と紐付けを確定</SubmitButton>
               </ActionForm>
             )}
 
@@ -165,7 +166,7 @@ export default async function PostsPage() {
                     <input name={k} inputMode="numeric" className="input" defaultValue={latest?.[k as keyof Insight] ?? ""} />
                   </div>
                 ))}
-                <div className="flex items-end"><button className="btn-outline w-full">保存</button></div>
+                <div className="flex items-end"><SubmitButton className="btn-outline w-full">保存</SubmitButton></div>
               </ActionForm>
             </details>
 
@@ -174,7 +175,7 @@ export default async function PostsPage() {
                 <ActionForm key={kind} action={makeReport} progressSteps={REPORT_STEPS}>
                   <input type="hidden" name="kind" value={kind} />
                   <input type="hidden" name="post_id" value={post.id} />
-                  <button className="btn-outline text-xs" disabled={!latest}>{label}を作る</button>
+                  <SubmitButton className="btn-outline text-xs" disabled={!latest}>{label}を作る</SubmitButton>
                 </ActionForm>
               ))}
             </div>

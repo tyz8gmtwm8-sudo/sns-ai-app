@@ -4,6 +4,7 @@ import { toggleTask } from "@/app/actions/plans";
 import { PLAN_STATUS_LABELS, POST_TYPE_LABELS, REPORT_KIND_LABELS } from "@/lib/constants";
 import type { ChiefSummary, Plan, Task } from "@/lib/types";
 import { getConnection } from "@/lib/instagram/sync";
+import { SubmitButton } from "@/components/SubmitButton";
 
 // S-04 ダッシュボード（画面3）
 export default async function DashboardPage() {
@@ -65,7 +66,7 @@ export default async function DashboardPage() {
                 <form action={toggleTask}>
                   <input type="hidden" name="task_id" value={t.id} />
                   <input type="hidden" name="done" value="true" />
-                  <button className="mt-0.5 h-5 w-5 rounded border border-stone-400 hover:bg-stone-100" aria-label="完了にする" />
+                  <SubmitButton className="mt-0.5 flex h-5 w-5 items-center justify-center rounded border border-stone-400 text-stone-500 hover:bg-stone-100 [&_.spinner]:h-3 [&_.spinner]:w-3" aria-label="完了にする" />
                 </form>
                 <div className="flex-1">
                   <p className="font-medium">{t.title}</p>

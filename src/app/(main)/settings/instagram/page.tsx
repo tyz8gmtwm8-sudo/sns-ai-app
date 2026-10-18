@@ -4,6 +4,7 @@ import { chooseIgPage } from "@/app/actions/instagram";
 import { ActionForm } from "@/components/ActionForm";
 import { listInstagramPages, type PageCandidate } from "@/lib/instagram/graph";
 import { readPending } from "@/lib/instagram/oauth";
+import { SubmitButton } from "@/components/SubmitButton";
 
 // Instagram連携：つなぐページ（Instagramアカウント）を選ぶ画面
 export default async function ChooseInstagramPage() {
@@ -51,7 +52,7 @@ export default async function ChooseInstagramPage() {
               </div>
             </label>
           ))}
-          <button className="btn">このInstagramと連携する</button>
+          <SubmitButton className="btn">このInstagramと連携する</SubmitButton>
         </ActionForm>
       )}
     </div>

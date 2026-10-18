@@ -2,6 +2,7 @@
 import { ActionForm } from "./ActionForm";
 import { saveGenres } from "@/app/actions/account";
 import { GENRES } from "@/lib/constants";
+import { SubmitButton } from "@/components/SubmitButton";
 
 type Props = { name: string | null; selected: string[]; other: string | null; next: string };
 
@@ -28,7 +29,7 @@ export function GenreForm({ name, selected, other, next }: Props) {
         <label className="label" htmlFor="genre_other">「その他」を選んだ場合の内容</label>
         <input id="genre_other" name="genre_other" className="input" defaultValue={other ?? ""} placeholder="例：ペット、インテリア" />
       </div>
-      <button className="btn">保存して次へ</button>
+      <SubmitButton className="btn">保存して次へ</SubmitButton>
     </ActionForm>
   );
 }

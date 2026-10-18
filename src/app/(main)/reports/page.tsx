@@ -5,6 +5,7 @@ import { runCompetitorAnalysis } from "@/app/actions/instagram";
 import { ActionForm } from "@/components/ActionForm";
 import { getConnection } from "@/lib/instagram/sync";
 import type { Analysis, ChiefSummary } from "@/lib/types";
+import { SubmitButton } from "@/components/SubmitButton";
 
 const fmt = (d: string) => new Date(d).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", dateStyle: "short", timeStyle: "short" });
 
@@ -33,7 +34,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
             action={runCompetitorAnalysis}
             progressSteps={["競合アカウントの投稿を取得しています…", "分析AIが投稿種類ごとの傾向を読み解いています…", "編集長AIがまとめています…"]}
           >
-            <button className="btn-outline">競合分析を今すぐする</button>
+            <SubmitButton className="btn-outline">競合分析を今すぐする</SubmitButton>
           </ActionForm>
         ) : (
           <p className="text-xs text-stone-500">競合分析はInstagram連携後に使えます（毎週月曜に自動実行）</p>

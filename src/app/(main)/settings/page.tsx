@@ -5,6 +5,7 @@ import { disconnectInstagram } from "@/app/actions/instagram";
 import { getConnection } from "@/lib/instagram/sync";
 import { GenreForm } from "@/components/GenreForm";
 import { PolicyForm } from "@/components/PolicyForm";
+import { SubmitButton } from "@/components/SubmitButton";
 
 // S-10 設定
 export default async function SettingsPage({ searchParams }: PageProps<"/settings">) {
@@ -40,7 +41,7 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
             <div className="flex flex-wrap gap-2">
               <a href="/api/instagram/connect" className="btn-outline">{conn.status === "error" ? "再連携する" : "連携し直す"}</a>
               <form action={disconnectInstagram}>
-                <button className="btn-outline text-red-700">連携を解除</button>
+                <SubmitButton className="btn-outline text-red-700">連携を解除</SubmitButton>
               </form>
             </div>
           </div>
@@ -82,10 +83,10 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
             <input type="checkbox" name="notify_email" defaultChecked={profile?.notify_email ?? true} />
             メールでも通知を受け取る
           </label>
-          <button className="btn-outline">保存</button>
+          <SubmitButton className="btn-outline">保存</SubmitButton>
         </ActionForm>
         <ActionForm action={sendTestEmail} className="mt-3">
-          <button className="btn-outline" disabled={!emailReady}>テストメールを送る</button>
+          <SubmitButton className="btn-outline" disabled={!emailReady}>テストメールを送る</SubmitButton>
         </ActionForm>
       </section>
 

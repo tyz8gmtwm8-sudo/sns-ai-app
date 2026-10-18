@@ -3,6 +3,7 @@ import { acceptSuggestion, addIdea, deleteIdea, review, reuseIdea, updateIdeaMem
 import { ActionForm } from "@/components/ActionForm";
 import { CreatePostForm } from "./CreatePostForm";
 import type { Idea } from "@/lib/ideas";
+import { SubmitButton } from "@/components/SubmitButton";
 
 // ジャンルごとの、メモの書き方の例
 const MEMO_EXAMPLES: Record<string, string> = {
@@ -58,17 +59,17 @@ export default async function IdeasPage() {
             <div className="mt-2 flex gap-2">
               <form action={acceptSuggestion}>
                 <input type="hidden" name="idea_id" value={s.id} />
-                <button className="btn-outline px-3 py-1 text-xs">ネタ帳に追加</button>
+                <SubmitButton className="btn-outline px-3 py-1 text-xs">ネタ帳に追加</SubmitButton>
               </form>
               <form action={deleteIdea}>
                 <input type="hidden" name="idea_id" value={s.id} />
-                <button className="btn-outline px-3 py-1 text-xs text-stone-500">いらない</button>
+                <SubmitButton className="btn-outline px-3 py-1 text-xs text-stone-500">いらない</SubmitButton>
               </form>
             </div>
           </div>
         ))}
         <ActionForm action={review} progressSteps={["企画AIが分析の結果を読んでいます…", "企画AIがネタ帳を見直しています…", "もう少しです…"]}>
-          <button className="btn-outline">{suggestions.length ? "提案を作り直す" : "分析をもとにAIに見てもらう"}</button>
+          <SubmitButton className="btn-outline">{suggestions.length ? "提案を作り直す" : "分析をもとにAIに見てもらう"}</SubmitButton>
         </ActionForm>
       </section>
 
@@ -88,7 +89,7 @@ export default async function IdeasPage() {
             <input id="photos" name="photos" type="file" accept="image/*" multiple className="text-sm" />
             <p className="mt-1 text-xs text-stone-500">写真があると、AIが「実際に撮れている素材」を見て企画を考えます。</p>
           </div>
-          <button className="btn">ネタ帳に追加</button>
+          <SubmitButton className="btn">ネタ帳に追加</SubmitButton>
         </ActionForm>
       </section>
 
@@ -125,7 +126,7 @@ export default async function IdeasPage() {
                 <ActionForm action={updateIdeaMemo} className="mt-2 space-y-2">
                   <input type="hidden" name="idea_id" value={idea.id} />
                   <textarea name="memo" rows={4} className="input" defaultValue={idea.memo} placeholder={example} />
-                  <button className="btn-outline px-3 py-1 text-xs">メモを保存</button>
+                  <SubmitButton className="btn-outline px-3 py-1 text-xs">メモを保存</SubmitButton>
                 </ActionForm>
               </details>
               {idea.status === "unused" && (
@@ -138,12 +139,12 @@ export default async function IdeasPage() {
               {idea.status === "used" && (
                 <form action={reuseIdea}>
                   <input type="hidden" name="idea_id" value={idea.id} />
-                  <button className="btn-outline px-3 py-1 text-xs">もう一度使う</button>
+                  <SubmitButton className="btn-outline px-3 py-1 text-xs">もう一度使う</SubmitButton>
                 </form>
               )}
               <form action={deleteIdea}>
                 <input type="hidden" name="idea_id" value={idea.id} />
-                <button className="btn-outline px-3 py-1 text-xs text-red-700">削除</button>
+                <SubmitButton className="btn-outline px-3 py-1 text-xs text-red-700">削除</SubmitButton>
               </form>
             </div>
           </div>

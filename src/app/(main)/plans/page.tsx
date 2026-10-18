@@ -5,6 +5,7 @@ import { ActionForm } from "@/components/ActionForm";
 import { DeletePlanButton } from "@/components/DeletePlanButton";
 import { PLAN_STATUS_LABELS, POST_TYPE_LABELS } from "@/lib/constants";
 import type { Plan } from "@/lib/types";
+import { SubmitButton } from "@/components/SubmitButton";
 
 const ADOPT_STEPS = [
   "投稿作成AIがキャプション・ハッシュタグを作っています…",
@@ -49,7 +50,7 @@ export default async function PlansPage() {
               {p.status === "proposed" ? (
                 <ActionForm action={adopt} progressSteps={ADOPT_STEPS}>
                   <input type="hidden" name="plan_id" value={p.id} />
-                  <button className="btn-outline px-3 py-1 text-xs">採用して素材を作る</button>
+                  <SubmitButton className="btn-outline px-3 py-1 text-xs">採用して素材を作る</SubmitButton>
                 </ActionForm>
               ) : (
                 <Link href={`/plans/${p.id}/materials`} className="underline">素材</Link>

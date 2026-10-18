@@ -2,6 +2,7 @@
 import { ActionForm } from "./ActionForm";
 import { savePolicy } from "@/app/actions/account";
 import type { Policy } from "@/lib/types";
+import { SubmitButton } from "@/components/SubmitButton";
 
 const FIELDS: { key: keyof Policy; label: string; placeholder: string; multiline?: boolean }[] = [
   { key: "target", label: "ターゲット", placeholder: "例：20〜30代の女性、休日にカフェ巡りをする人" },
@@ -33,7 +34,7 @@ export function PolicyForm({ policy, next, submitLabel }: { policy: Policy | nul
           )}
         </div>
       ))}
-      <button className="btn">{submitLabel}</button>
+      <SubmitButton className="btn">{submitLabel}</SubmitButton>
     </ActionForm>
   );
 }

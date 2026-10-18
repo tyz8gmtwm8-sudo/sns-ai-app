@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { requireOnboardedAccount } from "@/lib/account";
 import { AccountSwitcher } from "@/components/AccountSwitcher";
+import { NavLink } from "@/components/NavLink";
+import { SubmitButton } from "@/components/SubmitButton";
 
 // AI生成は時間がかかるので、このグループの画面から呼ぶ処理の最大時間を延ばす（秒）
 export const maxDuration = 300;
@@ -32,7 +34,7 @@ export default async function MainLayout({ children }: LayoutProps<"/">) {
           <AccountSwitcher current={account} accounts={accounts} />
           <nav className="order-last flex w-full gap-4 overflow-x-auto whitespace-nowrap text-stone-600 sm:order-none sm:w-auto sm:gap-3">
             {NAV.map((n) => (
-              <Link key={n.href} href={n.href} className="hover:text-stone-900">{n.label}</Link>
+              <NavLink key={n.href} href={n.href} className="hover:text-stone-900">{n.label}</NavLink>
             ))}
           </nav>
           <div className="ml-auto flex shrink-0 items-center gap-3">
@@ -43,7 +45,7 @@ export default async function MainLayout({ children }: LayoutProps<"/">) {
               )}
             </Link>
             <form action="/auth/signout" method="post">
-              <button className="text-xs text-stone-500 underline">ログアウト</button>
+              <SubmitButton className="text-xs text-stone-500 underline">ログアウト</SubmitButton>
             </form>
           </div>
         </div>
