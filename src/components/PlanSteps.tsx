@@ -19,8 +19,13 @@ const CURRENT: Record<string, number> = {
   done: STEPS.length,
 };
 
+/** 企画の進み具合（何段階目か）。ダッシュボードの進み具合の表示でも使う */
+export function planProgress(status: string) {
+  return { current: CURRENT[status] ?? 0, total: STEPS.length, label: STEPS[CURRENT[status] ?? 0]?.label ?? "完了" };
+}
+
 export function PlanSteps({ planId, status }: { planId: string; status: string }) {
-  const current = CURRENT[status] ?? 0;
+  const { current } = planProgress(status);
   return (
     <ol className="flex flex-wrap items-center gap-x-2 gap-y-2 text-xs">
       {STEPS.map((step, i) => {
