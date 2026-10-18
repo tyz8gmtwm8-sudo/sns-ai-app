@@ -11,19 +11,18 @@ import { planProgress } from "@/components/PlanSteps";
 export default async function DashboardPage() {
   const { supabase, account } = await requireOnboardedAccount();
 
-  const [{ data: tasks }, { data: activePlans }, { data: latestReport }, { data: notifications }, { count: unusedIdeas }, { count: unread }] =
+  const [{ data: tasks }, { data: activePlans }, { data: latestReport }, { data: notifications }] =
     await Promise.all([
       supabase.from("tasks").select("*").eq("account_id", account.id).eq("status", "todo").order("created_at").order("sort"),
       supabase
         .from("plans")
         .select("*")
         .eq("account_id", account.id)
-        .in("status", ["adopted", "materials_ready", "reported", "posted"])
+        // 投稿済み（公開済み）の企画は表示しない
+        .in("status", ["adopted", "materials_ready", "reported"])
         .order("adopted_at", { ascending: false }),
       supabase.from("reports").select("*").eq("account_id", account.id).neq("kind", "competitor").order("created_at", { ascending: false }).limit(1).maybeSingle(),
       supabase.from("notifications").select("*").eq("account_id", account.id).is("read_at", null).order("created_at", { ascending: false }).limit(3),
-      supabase.from("ideas").select("id", { count: "exact", head: true }).eq("account_id", account.id).eq("status", "unused"),
-      supabase.from("notifications").select("id", { count: "exact", head: true }).eq("account_id", account.id).is("read_at", null),
     ]);
 
   const summary = latestReport?.summary as ChiefSummary | undefined;
@@ -46,14 +45,6 @@ export default async function DashboardPage() {
     .limit(1)
     .maybeSingle();
 
-  // 上に並べる数字のまとめ（押すとその画面に移動する）
-  const stats = [
-    { label: "未使用のネタ", value: unusedIdeas ?? 0, href: "/ideas" },
-    { label: "進行中の企画", value: plans.length, href: "/plans" },
-    { label: "やること", value: todo.length, href: "#todo" },
-    { label: "未読のお知らせ", value: unread ?? 0, href: "/notifications" },
-  ];
-
   return (
     <div className="space-y-6">
       <div>
@@ -73,19 +64,6 @@ export default async function DashboardPage() {
           <span className="block text-xs">{lastJob.detail}</span>
         </div>
       )}
-
-      {/* ---------- 数字のまとめ ---------- */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {stats.map((st) => (
-          <Link key={st.label} href={st.href} className="card p-4 transition hover:border-stone-400">
-            <p className="text-xs text-stone-500">{st.label}</p>
-            <p className="mt-1 text-2xl font-bold">
-              {st.value}
-              <span className="ml-0.5 text-sm font-normal text-stone-500">件</span>
-            </p>
-          </Link>
-        ))}
-      </div>
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         {/* ---------- 左：今日やること ---------- */}

@@ -135,12 +135,8 @@ export async function adoptPlan(ctx: Ctx, planId: string) {
     })),
   );
 
+  // 素材ができたことは画面がそのまま切り替わって分かるので、通知は出さない
   await supabase.from("plans").update({ status: "materials_ready" }).eq("id", planId);
-  await notify(supabase, userId, account.id, {
-    title: "素材ができました",
-    body: `「${plan.title}」の素材と撮影タスクを用意しました。`,
-    link: `/plans/${planId}/materials`,
-  });
 }
 
 // ---------- 素材の一部を再生成する（F-12） ----------
