@@ -5,6 +5,7 @@ import { sendHearingMessage, resetHearing, type HearingState } from "@/app/actio
 import { PolicyForm } from "@/components/PolicyForm";
 import { Progress } from "@/components/Progress";
 import type { Policy } from "@/lib/types";
+import { SubmitButton } from "@/components/SubmitButton";
 
 type Message = { id: string; role: string; content: string };
 
@@ -65,13 +66,13 @@ export function HearingChat({ initialMessages, existingPolicy }: { initialMessag
               }
             }}
           />
-          <button className="btn self-end" disabled={pending}>送信</button>
+          <SubmitButton className="btn self-end" disabled={pending}>送信</SubmitButton>
         </form>
       )}
 
       <div className="flex flex-wrap gap-3 text-xs text-stone-500">
         <form action={resetHearing}>
-          <button className="underline">ヒアリングを最初からやり直す</button>
+          <SubmitButton className="underline">ヒアリングを最初からやり直す</SubmitButton>
         </form>
         {existingPolicy && <a href="/settings" className="underline">フォームで直接編集する</a>}
       </div>

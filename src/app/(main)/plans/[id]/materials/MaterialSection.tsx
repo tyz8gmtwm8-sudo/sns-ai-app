@@ -4,6 +4,7 @@ import { CopyButton } from "@/components/CopyButton";
 import { regenerate, saveMaterial } from "@/app/actions/plans";
 import { InstructionInput } from "@/components/InstructionInput";
 import type { RegenTarget } from "@/lib/workflows";
+import { SubmitButton } from "@/components/SubmitButton";
 
 // 項目ごとの、よく使う指示
 const CHIPS: Record<RegenTarget, string[]> = {
@@ -35,7 +36,7 @@ export function MaterialSection({ planId, target, title, copyText, note, childre
         <input type="hidden" name="plan_id" value={planId} />
         <input type="hidden" name="target" value={target} />
         {children}
-        <button className="btn-outline">編集を保存</button>
+        <SubmitButton className="btn-outline">編集を保存</SubmitButton>
       </ActionForm>
       <ActionForm
         action={regenerate}
@@ -45,7 +46,7 @@ export function MaterialSection({ planId, target, title, copyText, note, childre
         <input type="hidden" name="plan_id" value={planId} />
         <input type="hidden" name="target" value={target} />
         <InstructionInput placeholder="（任意）再生成の指示 例：もっと短く、価格を強調して" chips={CHIPS[target]} />
-        <button className="btn shrink-0 self-start">再生成</button>
+        <SubmitButton className="btn shrink-0 self-start">再生成</SubmitButton>
       </ActionForm>
     </section>
   );

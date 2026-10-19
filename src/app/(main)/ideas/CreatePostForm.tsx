@@ -2,6 +2,7 @@
 import { createFromIdea } from "@/app/actions/ideas";
 import { ActionForm } from "@/components/ActionForm";
 import { InstructionInput } from "@/components/InstructionInput";
+import { SubmitButton } from "@/components/SubmitButton";
 
 const CREATE_STEPS = [
   "企画AIがネタと分析の結果を読んでいます…",
@@ -17,9 +18,17 @@ export function CreatePostForm({ ideaId }: { ideaId: string }) {
   return (
     <ActionForm action={createFromIdea} className="space-y-2" progressSteps={CREATE_STEPS}>
       <input type="hidden" name="idea_id" value={ideaId} />
-      <InstructionInput placeholder="（任意）要望 例：リールで、断面を最初に見せたい" chips={CHIPS} />
-      <button className="btn w-full sm:w-auto">このネタで投稿を作る</button>
-      <p className="text-xs text-stone-500">企画とキャプション・動画構成をまとめて作ります（1〜2分かかります）。</p>
+      {/* 要望の入力欄は、開いたときだけ表示する（閉じていても、入力した要望は一緒に送られる） */}
+      <details className="text-sm">
+        <summary className="cursor-pointer text-stone-600 hover:text-stone-900">✏️ 要望を伝える（任意）</summary>
+        <div className="mt-2">
+          <InstructionInput placeholder="例：リールで、断面を最初に見せたい" chips={CHIPS} />
+        </div>
+      </details>
+      <div className="flex flex-wrap items-center gap-2">
+        <SubmitButton className="btn">このネタで投稿を作る</SubmitButton>
+        <span className="text-xs text-stone-500">企画・キャプション・動画構成をまとめて作ります（1〜2分）</span>
+      </div>
     </ActionForm>
   );
 }

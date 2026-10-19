@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireOnboardedAccount } from "@/lib/account";
 import { markAllRead } from "@/app/actions/posts";
+import { SubmitButton } from "@/components/SubmitButton";
 
 // 通知一覧
 export default async function NotificationsPage() {
@@ -16,7 +17,7 @@ export default async function NotificationsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="h1">通知</h1>
-        <form action={markAllRead}><button className="btn-outline">すべて既読にする</button></form>
+        <form action={markAllRead}><SubmitButton className="btn-outline">すべて既読にする</SubmitButton></form>
       </div>
       {!notifications?.length ? (
         <p className="text-sm text-stone-500">通知はありません。</p>
