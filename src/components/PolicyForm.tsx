@@ -3,6 +3,7 @@ import { ActionForm } from "./ActionForm";
 import { savePolicy } from "@/app/actions/account";
 import type { Policy } from "@/lib/types";
 import { SubmitButton } from "@/components/SubmitButton";
+import { CompetitorInput } from "@/components/CompetitorInput";
 
 const FIELDS: { key: keyof Policy; label: string; placeholder: string; multiline?: boolean }[] = [
   { key: "target", label: "ターゲット", placeholder: "例：20〜30代の女性、休日にカフェ巡りをする人" },
@@ -11,7 +12,7 @@ const FIELDS: { key: keyof Policy; label: string; placeholder: string; multiline
   { key: "worldview", label: "世界観・トーン", placeholder: "例：落ち着いたおしゃれ系、明るく自然光の写真", multiline: true },
   { key: "followers", label: "現在のフォロワー数", placeholder: "例：1200" },
   { key: "post_frequency", label: "投稿頻度", placeholder: "例：今は週1回 → 週3回にしたい" },
-  { key: "competitors", label: "競合・参考アカウント（スペース区切り）", placeholder: "例：@tokyo_cafe @gourmet_aoyama" },
+  { key: "competitors", label: "競合・参考アカウント", placeholder: "" },
   { key: "notes", label: "その他メモ", placeholder: "例：顔出しはしない", multiline: true },
 ];
 
@@ -27,7 +28,10 @@ export function PolicyForm({ policy, next, submitLabel }: { policy: Policy | nul
       {FIELDS.map((f) => (
         <div key={f.key}>
           <label className="label" htmlFor={f.key}>{f.label}</label>
-          {f.multiline ? (
+          {f.key === "competitors" ? (
+            // 競合だけは、1件ずつ追加・削除できる一覧にする
+            <CompetitorInput name={f.key} defaultValue={policy?.competitors ?? []} />
+          ) : f.multiline ? (
             <textarea id={f.key} name={f.key} rows={2} className="input" defaultValue={value(f.key)} placeholder={f.placeholder} />
           ) : (
             <input id={f.key} name={f.key} className="input" defaultValue={value(f.key)} placeholder={f.placeholder} />
