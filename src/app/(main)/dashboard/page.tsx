@@ -11,7 +11,8 @@ import { PlanProgressBar } from "@/components/PlanSteps";
 export default async function DashboardPage() {
   const { supabase, account } = await requireOnboardedAccount();
 
-  const [{ data: tasks }, { data: activePlans }, { data: latestReport }, { data: notifications }] =
+  // 連携切れや、定期実行の失敗の確認（conn・lastJob）も含めて、まとめて同時に取りに行く
+  const [{ data: tasks }, { data: activePlans }, { data: latestReport }, { data: notifications }, conn, { data: lastJob }] =
     await Promise.all([
       supabase.from("tasks").select("*").eq("account_id", account.id).eq("status", "todo").order("created_at").order("sort"),
       supabase
@@ -23,6 +24,14 @@ export default async function DashboardPage() {
         .order("adopted_at", { ascending: false }),
       supabase.from("reports").select("*").eq("account_id", account.id).not("kind", "in", "(competitor,post_48h)").order("created_at", { ascending: false }).limit(1).maybeSingle(),
       supabase.from("notifications").select("*").eq("account_id", account.id).is("read_at", null).order("created_at", { ascending: false }).limit(3),
+      getConnection(supabase, account.id),
+      supabase
+        .from("job_runs")
+        .select("status, detail, created_at")
+        .eq("account_id", account.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
 
   const summary = latestReport?.summary as ChiefSummary | undefined;
@@ -35,16 +44,6 @@ export default async function DashboardPage() {
     ...plans.map((p) => ({ key: p.id, title: p.title, href: `/plans/${p.id}/materials`, tasks: todo.filter((t) => t.plan_id === p.id) })),
     { key: "other", title: "そのほか", href: null, tasks: todo.filter((t) => !t.plan_id || !plans.some((p) => p.id === t.plan_id)) },
   ].filter((g) => g.tasks.length > 0);
-
-  // 連携切れや、定期実行の失敗があれば知らせる
-  const conn = await getConnection(supabase, account.id);
-  const { data: lastJob } = await supabase
-    .from("job_runs")
-    .select("status, detail, created_at")
-    .eq("account_id", account.id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
 
   return (
     <div className="space-y-6">
