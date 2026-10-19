@@ -19,6 +19,8 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
     .from("reports")
     .select("id, kind, created_at, analysis, summary, post_id, read_at")
     .eq("account_id", account.id)
+    // 48時間後レポートはやめたので、以前に作ったものも表示しない（データは残している）
+    .neq("kind", "post_48h")
     .order("created_at", { ascending: false })
     .limit(30);
 

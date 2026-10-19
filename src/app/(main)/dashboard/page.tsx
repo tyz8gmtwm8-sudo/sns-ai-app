@@ -21,7 +21,7 @@ export default async function DashboardPage() {
         // 投稿済み（公開済み）の企画は表示しない
         .in("status", ["adopted", "materials_ready", "reported"])
         .order("adopted_at", { ascending: false }),
-      supabase.from("reports").select("*").eq("account_id", account.id).neq("kind", "competitor").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      supabase.from("reports").select("*").eq("account_id", account.id).not("kind", "in", "(competitor,post_48h)").order("created_at", { ascending: false }).limit(1).maybeSingle(),
       supabase.from("notifications").select("*").eq("account_id", account.id).is("read_at", null).order("created_at", { ascending: false }).limit(3),
     ]);
 
