@@ -3,6 +3,7 @@ import { requireOnboardedAccount } from "@/lib/account";
 import { REPORT_KIND_LABELS } from "@/lib/constants";
 import { runCompetitorAnalysis } from "@/app/actions/instagram";
 import { makeReport } from "@/app/actions/posts";
+import { MarkRead } from "./MarkRead";
 import { ActionForm } from "@/components/ActionForm";
 import { getConnection } from "@/lib/instagram/sync";
 import type { Analysis, ChiefSummary } from "@/lib/types";
@@ -16,7 +17,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
   const { supabase, account } = await requireOnboardedAccount();
   const { data: reports } = await supabase
     .from("reports")
-    .select("id, kind, created_at, analysis, summary, post_id")
+    .select("id, kind, created_at, analysis, summary, post_id, read_at")
     .eq("account_id", account.id)
     .order("created_at", { ascending: false })
     .limit(30);
@@ -70,9 +71,14 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
             {reports.map((r) => {
               const label = postLabel(r.post_id);
               const active = r.id === selected?.id;
+              // 開いたことがあるレポートはグレー、まだ開いていないものは今までどおりの表示
+              const read = !!r.read_at;
               return (
                 <li key={r.id}>
-                  <Link href={`/reports?id=${r.id}`} className={`block rounded-lg px-3 py-2 ${active ? "bg-stone-900 text-white" : "hover:bg-stone-100"}`}>
+                  <Link
+                    href={`/reports?id=${r.id}`}
+                    className={`block rounded-lg px-3 py-2 ${active ? "bg-stone-900 text-white" : read ? "text-stone-400 hover:bg-stone-100" : "hover:bg-stone-100"}`}
+                  >
                     <span className="block font-medium">{REPORT_KIND_LABELS[r.kind] ?? r.kind}</span>
                     {label && <span className="line-clamp-1 text-xs opacity-80">{label}</span>}
                     <span className="text-xs opacity-60">{fmt(r.created_at)}</span>
@@ -85,6 +91,8 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
           {/* ---------- 右：選んだレポート ---------- */}
           {selected && (
             <div className="space-y-4">
+              {/* 表示したレポートを既読にする */}
+              {!selected.read_at && <MarkRead reportId={selected.id} />}
               <section className="card space-y-2">
                 <p className="text-xs text-stone-500">
                   {REPORT_KIND_LABELS[selected.kind] ?? selected.kind}
