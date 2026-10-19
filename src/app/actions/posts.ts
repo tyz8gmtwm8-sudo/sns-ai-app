@@ -8,6 +8,21 @@ import { createReport, type ReportKind, REPORT_KINDS } from "@/lib/workflows";
 import { readInsightScreenshots } from "@/lib/agents/screenshot";
 import type { ImageInput } from "@/lib/gemini";
 
+// 企画が、すでに別の投稿と紐付け確定済みかどうか調べる
+// （画面の選択肢からは外しているが、別のタブで同時に操作したときなどの二重紐付けを防ぐ）
+const DUPLICATE_LINK_ERROR = "この企画はすでに別の投稿と紐付いています。画面を読み込み直して、別の企画を選んでください";
+
+async function isPlanLinkedToOtherPost(
+  supabase: Awaited<ReturnType<typeof requireUser>>["supabase"],
+  planId: string,
+  postId?: string,
+) {
+  let query = supabase.from("posts").select("id").eq("plan_id", planId).eq("link_status", "confirmed").limit(1);
+  if (postId) query = query.neq("id", postId); // 自分自身の投稿は除く
+  const { data } = await query;
+  return (data?.length ?? 0) > 0;
+}
+
 // ---------- 投稿の手動登録（API連携前・連携できない時用） ----------
 export async function addPost(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const permalink = String(formData.get("permalink") ?? "").trim();
@@ -17,6 +32,7 @@ export async function addPost(_prev: ActionState, formData: FormData): Promise<A
 
   try {
     const { supabase, userId, account } = await requireOnboardedAccount();
+    if (planId && (await isPlanLinkedToOtherPost(supabase, planId))) return { error: DUPLICATE_LINK_ERROR };
     const { error } = await supabase.from("posts").insert({
       user_id: userId,
       account_id: account.id,
@@ -43,6 +59,7 @@ export async function confirmLink(_prev: ActionState, formData: FormData): Promi
 
   try {
     const { supabase } = await requireUser();
+    if (await isPlanLinkedToOtherPost(supabase, planId, postId)) return { error: DUPLICATE_LINK_ERROR };
     await supabase.from("posts").update({ plan_id: planId, link_status: "confirmed" }).eq("id", postId);
     await supabase.from("plans").update({ status: "posted" }).eq("id", planId).neq("status", "done");
     // 「予約投稿」「紐付け」タスクを完了にする
