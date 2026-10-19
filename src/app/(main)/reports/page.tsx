@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireOnboardedAccount } from "@/lib/account";
 import { REPORT_KIND_LABELS } from "@/lib/constants";
 import { runCompetitorAnalysis } from "@/app/actions/instagram";
+import { makeReport } from "@/app/actions/posts";
 import { ActionForm } from "@/components/ActionForm";
 import { getConnection } from "@/lib/instagram/sync";
 import type { Analysis, ChiefSummary } from "@/lib/types";
@@ -29,16 +30,22 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h1 className="h1">分析レポート</h1>
-        {conn ? (
-          <ActionForm
-            action={runCompetitorAnalysis}
-            progressSteps={["競合アカウントの投稿を取得しています…", "分析AIが投稿種類ごとの傾向を読み解いています…", "編集長AIがまとめています…"]}
-          >
-            <SubmitButton className="btn-outline">競合分析を今すぐする</SubmitButton>
+        <div className="flex flex-wrap items-center gap-2">
+          <ActionForm action={makeReport} progressSteps={["分析AIが数値を読み解いています…", "編集長AIが改善案をまとめています…", "もう少しです…"]}>
+            <input type="hidden" name="kind" value="weekly" />
+            <SubmitButton className="btn-outline">週次レポートを今すぐ作る</SubmitButton>
           </ActionForm>
-        ) : (
-          <p className="text-xs text-stone-500">競合分析はInstagram連携後に使えます（毎週月曜に自動実行）</p>
-        )}
+          {conn ? (
+            <ActionForm
+              action={runCompetitorAnalysis}
+              progressSteps={["競合アカウントの投稿を取得しています…", "分析AIが投稿種類ごとの傾向を読み解いています…", "編集長AIがまとめています…"]}
+            >
+              <SubmitButton className="btn-outline">競合分析を今すぐする</SubmitButton>
+            </ActionForm>
+          ) : (
+            <p className="text-xs text-stone-500">競合分析はInstagram連携後に使えます（毎週月曜に自動実行）</p>
+          )}
+        </div>
       </div>
       {!reports?.length ? (
         <p className="card text-sm text-stone-600">
