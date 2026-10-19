@@ -27,7 +27,7 @@ const fmt = (d: string) => new Date(d).toLocaleString("ja-JP", { timeZone: "Asia
 // S-08 投稿の紐付け（＋数値の手入力）
 export default async function PostsPage() {
   const { supabase, account } = await requireOnboardedAccount();
-  const [{ data: postsData }, { data: plans }] = await Promise.all([
+  const [{ data: postsData }, { data: plans }, { data: linkedData }] = await Promise.all([
     supabase
       .from("posts")
       .select("id, media_type, permalink, caption, posted_at, plan_id, link_status, thumbnail_url, insights(likes, comments, reach, saves, shares, plays, captured_at, source)")
@@ -35,15 +35,21 @@ export default async function PostsPage() {
       .order("posted_at", { ascending: false })
       .limit(30),
     supabase.from("plans").select("id, title, status").eq("account_id", account.id).in("status", ["materials_ready", "reported", "posted", "done"]).order("created_at", { ascending: false }),
+    // すでに投稿と紐付けが確定している企画（表示する30件より古い投稿の分も含めて調べる）
+    supabase.from("posts").select("plan_id").eq("account_id", account.id).eq("link_status", "confirmed").not("plan_id", "is", null),
   ]);
   const posts = (postsData ?? []) as PostRow[];
   const conn = await getConnection(supabase, account.id);
   const planTitle = (id: string | null) => plans?.find((p) => p.id === id)?.title;
 
+  // 選択肢には、まだどの投稿とも紐付いていない企画だけを出す
+  const linkedPlanIds = new Set((linkedData ?? []).map((p) => p.plan_id));
+  const freePlans = plans?.filter((p) => !linkedPlanIds.has(p.id)) ?? [];
+
   const planSelect = (defaultValue?: string | null) => (
-    <select name="plan_id" className="input" defaultValue={defaultValue ?? ""}>
+    <select name="plan_id" className="input" defaultValue={freePlans.some((p) => p.id === defaultValue) ? defaultValue! : ""}>
       <option value="">企画を選ぶ</option>
-      {plans?.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+      {freePlans.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
     </select>
   );
 
