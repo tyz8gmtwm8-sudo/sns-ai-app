@@ -2,7 +2,7 @@ import Link from "next/link";
 import { accountLabel, requireOnboardedAccount } from "@/lib/account";
 import { toggleTask } from "@/app/actions/plans";
 import { POST_TYPE_LABELS, REPORT_KIND_LABELS } from "@/lib/constants";
-import type { ChiefSummary, Plan, Task } from "@/lib/types";
+import type { Analysis, ChiefSummary, Plan, Task } from "@/lib/types";
 import { getConnection } from "@/lib/instagram/sync";
 import { SubmitButton } from "@/components/SubmitButton";
 import { PlanProgressBar } from "@/components/PlanSteps";
@@ -26,6 +26,7 @@ export default async function DashboardPage() {
     ]);
 
   const summary = latestReport?.summary as ChiefSummary | undefined;
+  const analysis = latestReport?.analysis as Analysis | undefined;
   const plans = (activePlans ?? []) as Plan[];
   const todo = (tasks ?? []) as Task[];
 
@@ -140,14 +141,11 @@ export default async function DashboardPage() {
 
           <section className="card">
             <h2 className="h2">最新レポート</h2>
-            {latestReport && summary ? (
+            {latestReport && (analysis?.headline || summary) ? (
               <div className="mt-3 text-sm">
                 <span className="badge">{REPORT_KIND_LABELS[latestReport.kind]}</span>
-                <p className="mt-2 line-clamp-3">{summary.message}</p>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-stone-600">
-                  {summary.improvements.slice(0, 3).map((s, i) => <li key={i} className="line-clamp-2">{s}</li>)}
-                </ul>
-                <Link href={`/reports?id=${latestReport.id}`} className="mt-3 inline-block underline">詳しく見る</Link>
+                <p className="mt-2 line-clamp-3 font-medium">{analysis?.headline ?? summary?.message}</p>
+                <Link href={`/reports?id=${latestReport.id}`} className="mt-2 inline-block text-xs underline">詳しく見る</Link>
               </div>
             ) : (
               <p className="mt-3 text-sm text-stone-500">投稿を分析するとここに表示されます。</p>
