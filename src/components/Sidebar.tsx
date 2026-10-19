@@ -69,7 +69,7 @@ export function Sidebar({ account, accounts, unread }: Props) {
             🔔<Badge count={unread} />
           </NavLink>
           <form action="/auth/signout" method="post">
-            <SubmitButton className="flex items-center gap-1 text-xs text-stone-500 underline">ログアウト</SubmitButton>
+            <SubmitButton className="flex shrink-0 items-center gap-1 whitespace-nowrap text-xs text-stone-500 underline">ログアウト</SubmitButton>
           </form>
         </div>
         <nav className="flex gap-4 overflow-x-auto whitespace-nowrap px-4 pb-3 text-sm text-stone-600">
