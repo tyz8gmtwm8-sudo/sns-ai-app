@@ -237,7 +237,9 @@ export async function submitCompletion(
 }
 
 // ---------- 7. 分析レポート作成 ----------
-export type ReportKind = "post_48h" | "post_7d" | "weekly";
+// 48時間後レポート（post_48h）はやめた。過去に作ったものは、レポートの画面でそのまま見られる
+export type ReportKind = "post_7d" | "weekly";
+export const REPORT_KINDS: ReportKind[] = ["post_7d", "weekly"];
 
 export async function createReport(ctx: Ctx, kind: ReportKind, postId?: string) {
   const { supabase, userId, account } = ctx;
@@ -253,10 +255,13 @@ export async function createReport(ctx: Ctx, kind: ReportKind, postId?: string) 
 
   let data: unknown;
   if (kind === "weekly") {
-    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    // 投稿から7日以上たって、数字がそろった投稿で比べる
+    // （7日たっていない投稿は、まだ伸びている途中なので入れない）
+    const DAY = 24 * 60 * 60 * 1000;
+    const ageOf = (p: { posted_at: string | null }) => (p.posted_at ? Date.now() - new Date(p.posted_at).getTime() : 0);
     data = {
-      this_week: (posts ?? []).filter((p) => p.posted_at && new Date(p.posted_at).getTime() >= weekAgo),
-      earlier_posts_for_comparison: (posts ?? []).filter((p) => !p.posted_at || new Date(p.posted_at).getTime() < weekAgo),
+      target_posts_7_to_14_days_old: (posts ?? []).filter((p) => ageOf(p) >= 7 * DAY && ageOf(p) < 14 * DAY),
+      earlier_posts_for_comparison: (posts ?? []).filter((p) => ageOf(p) >= 14 * DAY),
     };
   } else {
     if (!postId) throw new Error("投稿を選んでください");

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireOnboardedAccount, requireUser } from "@/lib/account";
 import { toErrorState, type ActionState } from "@/lib/action-state";
-import { createReport, type ReportKind } from "@/lib/workflows";
+import { createReport, type ReportKind, REPORT_KINDS } from "@/lib/workflows";
 import { readInsightScreenshots } from "@/lib/agents/screenshot";
 import type { ImageInput } from "@/lib/gemini";
 
@@ -162,6 +162,8 @@ export async function readScreenshot(_prev: ActionState, formData: FormData): Pr
 export async function makeReport(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const kind = String(formData.get("kind")) as ReportKind;
   const postId = String(formData.get("post_id") ?? "") || undefined;
+  // 作れるのは7日後レポートと週次レポートだけ
+  if (!REPORT_KINDS.includes(kind)) return { error: "このレポートは作れません" };
   let reportId: string;
   try {
     const ctx = await requireOnboardedAccount();

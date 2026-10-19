@@ -265,7 +265,8 @@ export async function analyzeCompetitors(ctx: Ctx) {
   return report?.id as string | undefined;
 }
 
-// ---------- 4. 自動レポート（48時間後・7日後・週次）（F-16） ----------
+// ---------- 4. 自動レポート（7日後・週次）（F-16） ----------
+// 48時間後レポートは、数字がそろう前の判断になりやすく、7日後と内容が重なるのでやめた
 
 /** 1回の実行で作るレポートの上限（AIの利用回数と処理時間を抑えるため。残りは翌日） */
 const MAX_REPORTS_PER_RUN = 3;
@@ -294,17 +295,18 @@ export async function runScheduledReports(ctx: Ctx) {
     if (age >= 7 * DAY && !has(post.id, "post_7d")) {
       await createReport(ctx, "post_7d", post.id);
       created.push("post_7d");
-      // 48時間後レポート（2〜7日の間。7日を過ぎたら7日後レポートだけにする）
-    } else if (age >= 2 * DAY && age < 7 * DAY && !has(post.id, "post_48h")) {
-      await createReport(ctx, "post_48h", post.id);
-      created.push("post_48h");
     }
   }
 
   // 週次レポート：月曜日（日本時間）に、直近6日以内に作っていなければ作る
+  // 比べる投稿（投稿から7〜14日たって、数字がそろった投稿）が無い週は作らない
   const jstDay = new Date(now + 9 * 60 * 60 * 1000).getUTCDay();
   const weeklyDone = existing?.some((r) => r.kind === "weekly" && now - new Date(r.created_at).getTime() < 6 * DAY);
-  if (jstDay === 1 && !weeklyDone && created.length < MAX_REPORTS_PER_RUN && posts?.length) {
+  const hasMaturePosts = posts?.some((p) => {
+    const age = p.posted_at ? now - new Date(p.posted_at).getTime() : 0;
+    return age >= 7 * DAY && age < 14 * DAY;
+  });
+  if (jstDay === 1 && !weeklyDone && created.length < MAX_REPORTS_PER_RUN && hasMaturePosts) {
     await createReport(ctx, "weekly");
     created.push("weekly");
   }
