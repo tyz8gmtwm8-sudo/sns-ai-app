@@ -17,7 +17,7 @@ const schema = {
 
 export async function runAnalyst(input: {
   account: Account;
-  kindLabel: string; // 「48時間後レポート」など
+  kindLabel: string; // 「7日後レポート」など
   data: unknown; // 分析対象の投稿・インサイト・競合データ
 }): Promise<Analysis> {
   return generateJson<Analysis>({

@@ -1,5 +1,5 @@
 // 毎日の定期実行（Vercel Cron から毎朝呼ばれる）
-// 1. Instagramから投稿・インサイトを取得  2. 48時間後・7日後・週次レポート  3. 月曜は競合分析
+// 1. Instagramから投稿・インサイトを取得  2. 7日後・週次レポート  3. 月曜は競合分析
 // 失敗した場合は job_runs に記録してダッシュボードに表示し、翌日の実行で自動的にやり直す
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";

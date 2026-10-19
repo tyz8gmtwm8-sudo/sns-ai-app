@@ -170,7 +170,7 @@ export default async function PostsPage() {
             </details>
 
             <div className="flex flex-wrap gap-2">
-              {([["post_48h", "48時間後レポート"], ["post_7d", "7日後レポート"]] as const).map(([kind, label]) => (
+              {([["post_7d", "7日後レポート"]] as const).map(([kind, label]) => (
                 <ActionForm key={kind} action={makeReport} progressSteps={REPORT_STEPS}>
                   <input type="hidden" name="kind" value={kind} />
                   <input type="hidden" name="post_id" value={post.id} />
