@@ -7,6 +7,7 @@ import { MaterialSection } from "./MaterialSection";
 import { Tabs } from "@/components/Tabs";
 import { DeletePlanButton } from "@/components/DeletePlanButton";
 import { PlanSteps } from "@/components/PlanSteps";
+import { CaptionEditor } from "@/components/CaptionEditor";
 
 const hashtagText = (h: Hashtags | null) =>
   h ? [...h.large, ...h.medium, ...h.small].map((t) => "#" + t).join(" ") : "";
@@ -60,7 +61,7 @@ export default async function MaterialsPage({ params }: PageProps<"/plans/[id]/m
                 label: "キャプション",
                 content: (
                   <MaterialSection planId={id} target="caption" title="キャプション" copyText={`${m.caption ?? ""}\n\n${hashtagText(m.hashtags)}`}>
-                    <textarea name="caption" rows={22} className="input" defaultValue={m.caption ?? ""} />
+                    <CaptionEditor name="caption" defaultValue={m.caption ?? ""} />
                   </MaterialSection>
                 ),
               },
