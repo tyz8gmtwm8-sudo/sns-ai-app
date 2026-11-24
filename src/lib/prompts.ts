@@ -12,7 +12,8 @@ export type AgentName =
   | "video" // 動画構成AI
   | "analyst" // 分析AI
   | "hearing" // AIヒアリング
-  | "screenshot"; // スクショ読み取り
+  | "screenshot" // スクショ読み取り
+  | "store-instagram"; // お店のインスタ探し
 
 const dir = path.join(process.cwd(), "prompts");
 

@@ -194,3 +194,23 @@ export async function fetchCompetitor(myIgUserId: string, username: string, toke
   const bd = res.business_discovery;
   return { username: bd.username ?? username, followers_count: bd.followers_count, media_count: bd.media_count, media: bd.media?.data ?? [] };
 }
+
+// ---------- お店のインスタ確認（キャプションへの差し込み用） ----------
+
+export type IgProfile = { username: string; name?: string; biography?: string; website?: string; followers_count?: number };
+
+/**
+ * Business Discovery で、ユーザー名のアカウントが実在するかと、名前・自己紹介を取得する。
+ * ビジネス・クリエイターアカウントしか取れないので、見つからなければ null を返す。
+ */
+export async function fetchProfile(myIgUserId: string, username: string, token: string): Promise<IgProfile | null> {
+  try {
+    const res = await graphGet<{ business_discovery: IgProfile }>(myIgUserId, {
+      fields: `business_discovery.username(${username}){username,name,biography,website,followers_count}`,
+      access_token: token,
+    });
+    return res.business_discovery ?? null;
+  } catch {
+    return null;
+  }
+}

@@ -3,7 +3,7 @@
 // 店名で検索 → 候補から選ぶ → 住所・営業時間・インスタなどをキャプションの最後に追加する
 // （追加したあと「編集を保存」を押すと保存される）
 import { useState, useTransition } from "react";
-import { findStores } from "@/app/actions/places";
+import { findInstagram, findStores, type InstagramSearchResult } from "@/app/actions/places";
 import type { StoreInfo } from "@/lib/places";
 
 // 差し込む項目（チェックを外した項目は入れない）
@@ -39,6 +39,9 @@ export function CaptionEditor({ name, defaultValue }: { name: string; defaultVal
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [pending, startTransition] = useTransition();
+  // Geminiでのインスタ探し
+  const [igResult, setIgResult] = useState<InstagramSearchResult | null>(null);
+  const [igPending, startIgTransition] = useTransition();
 
   function search() {
     setError("");
@@ -55,6 +58,15 @@ export function CaptionEditor({ name, defaultValue }: { name: string; defaultVal
   function choose(s: StoreInfo) {
     setSelected(s);
     setInstagram(s.instagram ?? ""); // Googleマップで分かればそれを入れておく（分からなければ手入力）
+    setIgResult(null);
+  }
+
+  function searchInstagram() {
+    if (!selected) return;
+    setIgResult(null);
+    startIgTransition(async () => {
+      setIgResult(await findInstagram({ name: selected.name, address: selected.address, website: selected.website }));
+    });
   }
 
   function toggle(key: ItemKey) {
@@ -139,7 +151,43 @@ export function CaptionEditor({ name, defaultValue }: { name: string; defaultVal
                   autoCorrect="off"
                 />
                 {!selected.instagram && (
-                  <p className="mt-1 text-xs text-stone-500">Googleマップにはインスタが登録されていなかったので、分かれば入力してください（空なら入れません）。</p>
+                  <p className="mt-1 text-xs text-stone-500">Googleマップにはインスタが登録されていませんでした。下のボタンでAIに探してもらうか、分かれば入力してください（空なら入れません）。</p>
+                )}
+                <button type="button" onClick={searchInstagram} disabled={igPending} className="btn-outline mt-2 text-xs">
+                  {igPending ? "AIがGoogle検索で探しています…（10〜30秒）" : "🔍 Geminiでインスタを探す"}
+                </button>
+                {igResult?.error && <p className="mt-1 text-xs text-red-700">⚠️ {igResult.error}</p>}
+
+                {/* AIが見つけた候補。押すと上の欄に入る */}
+                {igResult?.candidates && (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs text-amber-800">
+                      ⚠️ AIの検索結果なので、間違っている場合があります。リンクを開いて、お店の公式アカウントか確認してから選んでください。
+                    </p>
+                    {igResult.candidates.map((c) => (
+                      <div key={c.username} className="flex items-start gap-2 rounded-lg border border-stone-200 p-2 text-sm">
+                        <div className="min-w-0 flex-1">
+                          <a href={`https://www.instagram.com/${c.username}/`} target="_blank" rel="noreferrer" className="font-medium hover:underline">
+                            @{c.username} ↗
+                          </a>
+                          {igResult.canVerify && (
+                            <span className={`ml-2 badge ${c.profile ? "bg-emerald-100 text-emerald-900" : "bg-stone-100 text-stone-600"}`}>
+                              {c.profile ? "✓ 実在を確認" : "確認できず"}
+                            </span>
+                          )}
+                          {c.profile?.name && <span className="block text-xs text-stone-700">{c.profile.name}</span>}
+                          {c.profile?.biography && <span className="block line-clamp-2 text-xs text-stone-500">{c.profile.biography}</span>}
+                          {c.reason && <span className="block text-xs text-stone-500">理由：{c.reason}</span>}
+                        </div>
+                        <button type="button" onClick={() => setInstagram(c.username)} className="btn-outline shrink-0 text-xs">
+                          これにする
+                        </button>
+                      </div>
+                    ))}
+                    {!igResult.canVerify && (
+                      <p className="text-xs text-stone-500">設定画面でInstagram連携をすると、候補のアカウントが本当にあるかも確認できます。</p>
+                    )}
+                  </div>
                 )}
               </div>
             )}
